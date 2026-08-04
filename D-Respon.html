@@ -1011,11 +1011,13 @@ textarea.fc{min-height:80px;resize:vertical}
 const COMPLAINTS = [];
 
 const OFFICERS = [
-  {nama:'Pn. Siti Rahimah',jawatan:'Penolong Pengarah',unit:'Unit Kurikulum',emel:'siti@ppd.edu.my',beban:8,kapasiti:12},
-  {nama:'En. Kamarudin',jawatan:'Penolong Pengarah',unit:'Unit HEM',emel:'kamarudin@ppd.edu.my',beban:6,kapasiti:10},
-  {nama:'En. Hasrul Nizam',jawatan:'Pegawai Pendidikan',unit:'Unit Integriti',emel:'hasrul@ppd.edu.my',beban:9,kapasiti:10},
-  {nama:'Pn. Zalina',jawatan:'Pegawai Pendidikan',unit:'Unit Keselamatan',emel:'zalina@ppd.edu.my',beban:5,kapasiti:10},
+  {nama:'Pn. Siti Rahimah',jawatan:'Penolong Pengarah',unit:'Unit Kurikulum',emel:'siti@ppd.edu.my',kapasiti:12},
+  {nama:'En. Kamarudin',jawatan:'Penolong Pengarah',unit:'Unit HEM',emel:'kamarudin@ppd.edu.my',kapasiti:10},
+  {nama:'En. Hasrul Nizam',jawatan:'Pegawai Pendidikan',unit:'Unit Integriti',emel:'hasrul@ppd.edu.my',kapasiti:10},
+  {nama:'Pn. Zalina',jawatan:'Pegawai Pendidikan',unit:'Unit Keselamatan',emel:'zalina@ppd.edu.my',kapasiti:10},
 ];
+
+let ADUAN_COUNTER = 0;
 
 const LOG_KERJA = [];
 
@@ -1340,23 +1342,29 @@ function renderPDashboard() {
   }
 
   // Today's actions
+  const today = new Date().toISOString().slice(0,10);
+  const myLogs = LOG_KERJA.filter(l => l.pegawai === PGW_OFFICER);
+  const todayLogs = myLogs.filter(l => l.tarikh === today);
+  const nextAction = myLogs.filter(l => l.tarikh_seterusnya && l.tarikh_seterusnya >= today)
+    .sort((a,b) => a.tarikh_seterusnya.localeCompare(b.tarikh_seterusnya))[0];
+  const avgKemajuan = Math.round(active.reduce((a,c)=>a+c.kemajuan,0)/(active.length||1));
   const todayEl = document.getElementById('pgw-today');
   if (todayEl) todayEl.innerHTML = `
     <div class="stat-row">
       <div class="srl">📝 Entri log kerja hari ini</div>
-      <div class="srv" style="color:var(--blue)">1 rekod</div>
+      <div class="srv" style="color:var(--blue)">${todayLogs.length} rekod</div>
     </div>
     <div class="stat-row">
-      <div class="srl">📋 Temu bual dirancang</div>
-      <div class="srv">ADU/2026/0247</div>
+      <div class="srl">📋 Jumlah log kerja</div>
+      <div class="srv">${myLogs.length} rekod</div>
     </div>
     <div class="stat-row">
       <div class="srl">📅 Tindakan seterusnya</div>
-      <div class="srv">25 Julai 2026</div>
+      <div class="srv">${nextAction ? nextAction.tarikh_seterusnya : '—'}</div>
     </div>
     <div class="stat-row" style="border:none">
       <div class="srl">📊 Kemajuan purata kes aktif</div>
-      <div class="srv">${Math.round(active.reduce((a,c)=>a+c.kemajuan,0)/(active.length||1))}%</div>
+      <div class="srv">${avgKemajuan}%</div>
     </div>`;
 
   // Cases table
@@ -2023,15 +2031,15 @@ function simpanAduanBaharu() {
     return;
   }
 
-  const year = new Date().getFullYear();
-  const seq  = String(COMPLAINTS.length + 1).padStart(4, '0');
-  const newId = `MOE.${Date.now().toString().slice(-6)}`;
-  const refNo = `ADU/${year}/${seq}`;
+  ADUAN_COUNTER++;
+  const tDate = tarikh.replace(/-/g, '');
+  const seq   = String(ADUAN_COUNTER).padStart(3, '0');
+  const newId = `PPDDLT_${tDate}_${seq}`;
+  const refNo = newId;
 
   const slaMap = { Kritikal:3, Tinggi:7, Sederhana:14, Rendah:30 };
   const newCase = {
     id: newId,
-    ref: refNo,
     tarikh,
     saluran,
     sulit,
@@ -2063,7 +2071,7 @@ function simpanAduanBaharu() {
   const pgwKes = document.getElementById('pgw-kes-content');
   if (pgwKes) { pgwKes.dataset.rendered = ''; renderPKes(); }
 
-  alert(`✅ Aduan berjaya disimpan!\n\nNombor Rujukan: ${refNo}\nID Kes: ${newId}\n\nAnda akan dibawa ke Dashboard.`);
+  alert(`✅ Aduan berjaya disimpan!\n\nNombor Rujukan: ${newId}\n\nAnda akan dibawa ke Dashboard.`);
   goPgw('dashboard', document.querySelector('#nav-pegawai .nav-item'));
 }
 
@@ -2314,16 +2322,19 @@ function renderDashboard() {
   if(leg) leg.innerHTML = CATEGORIES.map(c=>`
     <div class="leg-item"><div class="leg-dot" style="background:${c.clr}"></div>${c.nama} (${c.count})</div>`).join('');
 
-  // Officer load
+  // Officer load (beban dikira dari COMPLAINTS)
   const ol = document.getElementById('officer-load');
-  if(ol) ol.innerHTML = OFFICERS.map(o=>`
-    <div style="margin-bottom:12px">
+  if(ol) ol.innerHTML = OFFICERS.map(o=>{
+    const beban = COMPLAINTS.filter(c => c.pegawai === o.nama && c.status !== 'Selesai' && c.status !== 'Ditutup').length;
+    const ratio = beban / o.kapasiti;
+    return `<div style="margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <div style="font-size:12.5px;font-weight:600;color:var(--tx)">${o.nama}</div>
-        <div style="font-size:11px;color:${o.beban/o.kapasiti>.8?'#DC2626':'var(--txm)'}">${o.beban}/${o.kapasiti} kes</div>
+        <div style="font-size:11px;color:${ratio>.8?'#DC2626':'var(--txm)'}">${beban}/${o.kapasiti} kes</div>
       </div>
-      <div class="prog-bar"><div class="prog-fill" style="width:${(o.beban/o.kapasiti)*100}%;background:${o.beban/o.kapasiti>.8?'#DC2626':o.beban/o.kapasiti>.6?'#D97706':'#2563EB'}"></div></div>
-    </div>`).join('');
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.min(ratio*100,100)}%;background:${ratio>.8?'#DC2626':ratio>.6?'#D97706':'#2563EB'}"></div></div>
+    </div>`;
+  }).join('');
 
   // Recent complaints table
   const rt = document.getElementById('tbl-recent');
@@ -2542,34 +2553,16 @@ function renderInvestigation() {
     </div>
     <div class="card">
       <div class="card-hdr"><div class="card-ttl">Log Tindakan Terkini</div></div>
-      <div class="card-bdy">
-        <div class="timeline">
-          <div class="tl-item">
-            <div class="tl-time">Hari ini, 09:42 pagi</div>
-            <div class="tl-ttl">Siasatan dimulakan — ADU/2026/0247</div>
-            <div class="tl-desc">Pn. Siti Rahimah menjalankan temu bual pertama dengan pengadu</div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-time">Semalam, 03:15 petang</div>
-            <div class="tl-ttl">Bukti diterima — ADU/2026/0243</div>
-            <div class="tl-desc">En. Hasrul Nizam menerima dokumen kewangan berkaitan kes</div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-time">22 Jul, 11:00 pagi</div>
-            <div class="tl-ttl">Status dikemaskini — ADU/2026/0244</div>
-            <div class="tl-desc">Pn. Zalina menghantar laporan kepada sekolah untuk maklum balas</div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-time">21 Jul, 02:30 petang</div>
-            <div class="tl-ttl">Kes diagihkan — ADU/2026/0239</div>
-            <div class="tl-desc">Aduan buli siber diagihkan kepada Pn. Zalina untuk siasatan</div>
-          </div>
-          <div class="tl-item" style="margin-bottom:0">
-            <div class="tl-time">20 Jul, 10:00 pagi</div>
-            <div class="tl-ttl">Aduan diterima — ADU/2026/0245</div>
-            <div class="tl-desc">Aduan berkaitan pengurusan yuran diterima melalui walk-in</div>
-          </div>
-        </div>
+      <div class="card-bdy" id="dash-log-tindakan">
+        ${LOG_KERJA.length === 0
+          ? `<div style="text-align:center;padding:20px;color:var(--txm);font-size:13px">Tiada log tindakan lagi. Log akan muncul apabila pegawai penyiasat mula merekod aktiviti.</div>`
+          : LOG_KERJA.slice().sort((a,b)=>new Date(b.tarikh)-new Date(a.tarikh)).slice(0,5).map((l,i)=>`
+            <div class="tl-item"${i===4?' style="margin-bottom:0"':''}>
+              <div class="tl-time">${l.tarikh}</div>
+              <div class="tl-ttl">${l.jenis} — ${l.no_aduan}</div>
+              <div class="tl-desc">${l.pegawai} — ${l.perkara}</div>
+            </div>`).join('')
+        }
       </div>
     </div>
   </div>
@@ -2801,10 +2794,10 @@ function renderAnalytics() {
             <div style="width:12px;height:12px;border-radius:3px;background:${c.clr};flex-shrink:0"></div>
             <div style="flex:1;font-size:13px;color:var(--tx)">${c.nama}</div>
             <div style="flex:2;height:14px;background:var(--surf2);border-radius:4px;overflow:hidden;border:1px solid var(--bd)">
-              <div style="height:100%;width:${Math.round((c.count/247)*100)}%;background:${c.clr};border-radius:4px"></div>
+              <div style="height:100%;width:${Math.round((c.count/Math.max(COMPLAINTS.length,1))*100)}%;background:${c.clr};border-radius:4px"></div>
             </div>
             <div style="width:32px;font-size:13px;font-weight:700;color:var(--tx);text-align:right">${c.count}</div>
-            <div style="width:40px;font-size:11px;color:var(--txm);text-align:right">${Math.round((c.count/247)*100)}%</div>
+            <div style="width:40px;font-size:11px;color:var(--txm);text-align:right">${Math.round((c.count/Math.max(COMPLAINTS.length,1))*100)}%</div>
           </div>`).join('')}
         </div>
       </div>
@@ -2898,12 +2891,7 @@ function renderReports() {
   if(el) el.dataset.rendered=1;
   if(!el) return;
 
-  const savedReports = [
-    {id:'LPR/2026/041',tarikh:'2026-07-22',aduan:'ADU/2026/0241',jenis:'Laporan Eksekutif',status:'Siap',pegawai:'En. Kamarudin'},
-    {id:'LPR/2026/040',tarikh:'2026-07-20',aduan:'ADU/2026/0236',jenis:'Ringkasan Pengurusan',status:'Siap',pegawai:'Pn. Siti Rahimah'},
-    {id:'LPR/2026/039',tarikh:'2026-07-18',aduan:'ADU/2026/0232',jenis:'Laporan Statistik',status:'Siap',pegawai:'En. Hasrul Nizam'},
-    {id:'LPR/2026/038',tarikh:'2026-07-15',aduan:'ADU/2026/0228',jenis:'Laporan Eksekutif',status:'Draf',pegawai:'Pn. Zalina'},
-  ];
+  const savedReports = [];
 
   el.innerHTML = `
   <!-- Laporan Cepat row -->
@@ -3192,14 +3180,7 @@ function previewReport() {
 // ══════════════════════════════════════
 // USERS
 // ══════════════════════════════════════
-const AUDIT_TRAIL = [
-  {masa:'2026-07-24 10:42',pengguna:'Nurazwan Ismail',tindakan:'Lihat Aduan Sulit',rujukan:'ADU/2026/0246',ip:'192.168.1.12'},
-  {masa:'2026-07-24 09:15',pengguna:'Nurazwan Ismail',tindakan:'Agih Pegawai',rujukan:'ADU/2026/0245',ip:'192.168.1.12'},
-  {masa:'2026-07-23 14:30',pengguna:'Pn. Siti Rahimah',tindakan:'Simpan Log Kerja',rujukan:'LK/2026/003',ip:'192.168.1.25'},
-  {masa:'2026-07-23 11:05',pengguna:'Nurazwan Ismail',tindakan:'Lihat Aduan Sulit',rujukan:'ADU/2026/0237',ip:'192.168.1.12'},
-  {masa:'2026-07-22 16:20',pengguna:'En. Hasrul Nizam',tindakan:'Kemaskini Status',rujukan:'ADU/2026/0243',ip:'192.168.1.31'},
-  {masa:'2026-07-22 09:30',pengguna:'Nurazwan Ismail',tindakan:'Jana Laporan',rujukan:'LPR/2026/041',ip:'192.168.1.12'},
-];
+const AUDIT_TRAIL = [];
 
 const PERMISSION_MATRIX = [
   {peranan:'Super Admin',       caps:['✅','✅','✅','✅','✅','✅','✅']},
@@ -3710,8 +3691,8 @@ function renderPSemak() {
 // ══════════════════════════════════════
 function toggleTheme() {
   const r = document.documentElement;
-  const cur = r.getAttribute('data-theme');
-  r.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  const cur = r.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  r.setAttribute('data-theme', cur === 'light' ? 'dark' : 'light');
 }
 
 // ══════════════════════════════════════
