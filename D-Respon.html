@@ -991,6 +991,17 @@ textarea.fc{min-height:80px;resize:vertical}
   </div>
 </div>
 
+<!-- ── MODAL: LAMPIRAN VIEWER ── -->
+<div class="overlay" id="modal-lampiran" onclick="if(event.target===this)closeLampiranViewer()" style="z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-width:90vw;max-height:90vh;width:900px;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--bd);flex-shrink:0">
+      <div style="font-weight:700;font-size:14px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100% - 40px)" id="lampiran-viewer-title">—</div>
+      <button onclick="closeLampiranViewer()" style="background:var(--surf2);border:1px solid var(--bd);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--tx);flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div id="lampiran-viewer-body" style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:16px;min-height:200px;max-height:80vh"></div>
+  </div>
+</div>
+
 <div class="overlay" id="modal-detail">
   <div class="modal modal-lg">
     <div class="modal-hdr">
@@ -1667,46 +1678,79 @@ function lkSelectCase(sel) {
 }
 
 function lkBuktiFileChange(input) {
-  const newFiles = Array.from(input.files);
-  newFiles.forEach(f => { if (!lkBuktiList.includes(f.name)) lkBuktiList.push(f.name); });
+  Array.from(input.files).forEach(f => {
+    if (!lkBuktiList.find(x => x.name === f.name)) {
+      lkBuktiList.push({ name: f.name, file: f, url: URL.createObjectURL(f) });
+    }
+  });
+  lkRenderChips();
+}
+
+function lkRenderChips() {
   const chips = document.getElementById('lk-bukti-chips');
   const drop  = document.getElementById('lk-bukti-drop');
   if (!chips) return;
-  chips.innerHTML = lkBuktiList.map((name, i) => {
-    const ext = name.split('.').pop().toLowerCase();
+  chips.innerHTML = lkBuktiList.map((item, i) => {
+    const ext = item.name.split('.').pop().toLowerCase();
     const ico = ['mp4','mov','avi','mkv'].includes(ext) ? '🎬'
               : ['mp3','wav','m4a','ogg','aac'].includes(ext) ? '🎙️'
               : ['jpg','jpeg','png','gif','webp','heic'].includes(ext) ? '🖼️'
-              : ['pdf'].includes(ext) ? '📕'
-              : '📄';
-    return `<span style="display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500">
-      ${ico} ${name}
-      <button onclick="lkRemoveBukti(${i})" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:14px;padding:0;line-height:1">×</button>
+              : ext === 'pdf' ? '📕' : '📄';
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;cursor:pointer" onclick="openLampiranViewer(${i},'lk')">
+      ${ico} ${item.name}
+      <button onclick="event.stopPropagation();lkRemoveBukti(${i})" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:14px;padding:0;line-height:1">×</button>
     </span>`;
   }).join('');
   if (drop) drop.textContent = lkBuktiList.length ? `📎 ${lkBuktiList.length} fail dipilih — klik untuk tambah lagi` : '📎 Klik untuk muat naik rakaman, video, gambar atau dokumen';
 }
 
 function lkRemoveBukti(idx) {
+  if (lkBuktiList[idx] && lkBuktiList[idx].url) URL.revokeObjectURL(lkBuktiList[idx].url);
   lkBuktiList.splice(idx, 1);
-  const fi = document.getElementById('lk-bukti-file');
-  if (fi) { const dt = new DataTransfer(); fi.files = dt.files; }
-  lkBuktiFileChange({ files: [] });
-  // Re-render chips from list
-  const chips = document.getElementById('lk-bukti-chips');
-  const drop  = document.getElementById('lk-bukti-drop');
-  if (chips) chips.innerHTML = lkBuktiList.map((name, i) => {
-    const ext = name.split('.').pop().toLowerCase();
-    const ico = ['mp4','mov','avi','mkv'].includes(ext) ? '🎬'
-              : ['mp3','wav','m4a','ogg','aac'].includes(ext) ? '🎙️'
-              : ['jpg','jpeg','png','gif','webp','heic'].includes(ext) ? '🖼️'
-              : ['pdf'].includes(ext) ? '📕' : '📄';
-    return `<span style="display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500">
-      ${ico} ${name}
-      <button onclick="lkRemoveBukti(${i})" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:14px;padding:0;line-height:1">×</button>
-    </span>`;
-  }).join('');
-  if (drop) drop.textContent = lkBuktiList.length ? `📎 ${lkBuktiList.length} fail dipilih — klik untuk tambah lagi` : '📎 Klik untuk muat naik rakaman, video, gambar atau dokumen';
+  lkRenderChips();
+}
+
+// ── LAMPIRAN VIEWER ──
+function openLampiranViewer(idx, src) {
+  let item;
+  if (src === 'lk') item = lkBuktiList[idx];
+  else if (src === 'tambah') item = { name: tambahLampiranFiles[idx].name, url: URL.createObjectURL(tambahLampiranFiles[idx]), file: tambahLampiranFiles[idx] };
+  if (!item || !item.url) return;
+
+  const ext  = item.name.split('.').pop().toLowerCase();
+  const body = document.getElementById('lampiran-viewer-body');
+  const title= document.getElementById('lampiran-viewer-title');
+  if (!body || !title) return;
+
+  title.textContent = item.name;
+
+  if (['jpg','jpeg','png','gif','webp','heic','bmp','svg'].includes(ext)) {
+    body.innerHTML = `<img src="${item.url}" style="max-width:100%;max-height:75vh;border-radius:6px;object-fit:contain" alt="${item.name}">`;
+  } else if (['mp4','mov','avi','mkv','webm'].includes(ext)) {
+    body.innerHTML = `<video src="${item.url}" controls style="max-width:100%;max-height:75vh;border-radius:6px" autoplay></video>`;
+  } else if (['mp3','wav','m4a','ogg','aac','flac'].includes(ext)) {
+    body.innerHTML = `<div style="text-align:center;padding:30px">
+      <div style="font-size:48px;margin-bottom:16px">🎙️</div>
+      <div style="font-size:13px;color:var(--txm);margin-bottom:16px">${item.name}</div>
+      <audio src="${item.url}" controls style="width:100%;max-width:400px"></audio>
+    </div>`;
+  } else if (ext === 'pdf') {
+    body.innerHTML = `<iframe src="${item.url}" style="width:100%;height:75vh;border:none;border-radius:6px"></iframe>`;
+  } else {
+    body.innerHTML = `<div style="text-align:center;padding:40px">
+      <div style="font-size:48px;margin-bottom:14px">📄</div>
+      <div style="font-size:13px;color:var(--txm);margin-bottom:16px">${item.name}</div>
+      <a href="${item.url}" download="${item.name}" class="btn btn-prim" style="text-decoration:none">⬇️ Muat Turun Fail</a>
+    </div>`;
+  }
+  document.getElementById('modal-lampiran').style.display = 'flex';
+}
+
+function closeLampiranViewer() {
+  const modal = document.getElementById('modal-lampiran');
+  const body  = document.getElementById('lampiran-viewer-body');
+  if (modal) modal.style.display = 'none';
+  if (body)  body.innerHTML = '';
 }
 
 function lkFilterList(sel) {
@@ -1718,10 +1762,10 @@ function lkFilterList(sel) {
 
 function lkReset() {
   ['lk-no-aduan','lk-pihak','lk-jawatan','lk-catatan'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const chips = document.getElementById('lk-bukti-chips'); if(chips) chips.innerHTML='';
-  const drop  = document.getElementById('lk-bukti-drop'); if(drop) drop.textContent='📎 Klik untuk muat naik rakaman, video, gambar atau dokumen';
-  const fi    = document.getElementById('lk-bukti-file'); if(fi){ const dt=new DataTransfer(); fi.files=dt.files; }
+  lkBuktiList.forEach(x=>{ if(x.url) URL.revokeObjectURL(x.url); });
   lkBuktiList=[];
+  lkRenderChips();
+  const fi = document.getElementById('lk-bukti-file'); if(fi){ const dt=new DataTransfer(); fi.files=dt.files; }
   const info=document.getElementById('lk-case-info');if(info)info.style.display='none';
 }
 
@@ -1738,7 +1782,7 @@ function lkSave() {
     tarikh: document.getElementById('lk-tarikh').value,
     jenis: document.getElementById('lk-jenis').value,
     pihak: pihak.value, jawatan: document.getElementById('lk-jawatan').value,
-    catatan: catatan.value, bukti: [...lkBuktiList],
+    catatan: catatan.value, bukti: lkBuktiList.map(x=>x.name),
     kemajuan: parseInt(document.getElementById('lk-kemajuan').value),
     tarikh_seterusnya: document.getElementById('lk-next').value,
     pegawai: PGW_OFFICER,
@@ -2060,11 +2104,17 @@ function tambahLampiranPreview(input) {
   tambahLampiranFiles = Array.from(input.files);
   const list = document.getElementById('tambah-lampiran-list');
   if (!list) return;
-  list.innerHTML = tambahLampiranFiles.map((f,i) => `
-    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:12px">
-      📎 ${f.name}
-      <span style="cursor:pointer;color:var(--txm);font-size:14px;line-height:1" onclick="tambahHapusLampiran(${i})">×</span>
-    </div>`).join('');
+  list.innerHTML = tambahLampiranFiles.map((f,i) => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const ico = ['mp4','mov','avi','mkv','webm'].includes(ext) ? '🎬'
+              : ['mp3','wav','m4a','ogg','aac'].includes(ext) ? '🎙️'
+              : ['jpg','jpeg','png','gif','webp','heic'].includes(ext) ? '🖼️'
+              : ext === 'pdf' ? '📕' : '📄';
+    return `<div style="display:inline-flex;align-items:center;gap:6px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:4px 10px;font-size:12px;cursor:pointer" onclick="openLampiranViewer(${i},'tambah')">
+      ${ico} ${f.name}
+      <span style="cursor:pointer;color:#6B7280;font-size:14px;line-height:1" onclick="event.stopPropagation();tambahHapusLampiran(${i})">×</span>
+    </div>`;
+  }).join('');
   const box = document.getElementById('tambah-lampiran-box');
   if (box) box.textContent = tambahLampiranFiles.length > 0 ? `📎 ${tambahLampiranFiles.length} fail dipilih — klik untuk tambah lagi` : '📎 Klik untuk muat naik dokumen atau gambar bukti';
 }
