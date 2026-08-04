@@ -1912,8 +1912,8 @@ function renderPKes() {
 // ── PEGAWAI TAMBAH (inline form) ──
 function renderPTambah() {
   const el = document.getElementById('pgw-tambah-content');
-  if (!el || el.dataset.rendered) return;
-  el.dataset.rendered = 1;
+  if (!el) return;
+  el.dataset.rendered = 0;
   el.innerHTML = `<div class="card" style="width:100%">
     <div class="card-hdr"><div class="card-ttl">📋 Borang Aduan Baharu</div></div>
     <div class="card-bdy">
@@ -1963,14 +1963,108 @@ function renderPTambah() {
       <div class="fg mb14"><label class="flbl">Ringkasan Aduan <span>*</span></label><input type="text" class="fc" placeholder="Ringkasan ringkas aduan"></div>
       <div class="fg mb14"><label class="flbl">Keterangan Terperinci <span>*</span></label><textarea class="fc" rows="4" placeholder="Huraikan aduan secara terperinci…"></textarea></div>
       <div class="fg mb14"><label class="flbl">Lampiran</label>
-        <div style="border:2px dashed var(--bds);border-radius:8px;padding:16px;text-align:center;color:var(--txm);font-size:13px;cursor:pointer">📎 Klik untuk muat naik dokumen atau gambar bukti</div>
+        <input type="file" id="tambah-lampiran-input" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="tambahLampiranPreview(this)">
+        <div id="tambah-lampiran-box" style="border:2px dashed var(--bds);border-radius:8px;padding:16px;text-align:center;color:var(--txm);font-size:13px;cursor:pointer" onclick="document.getElementById('tambah-lampiran-input').click()">📎 Klik untuk muat naik dokumen atau gambar bukti</div>
+        <div id="tambah-lampiran-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px"></div>
       </div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button class="btn btn-outline" onclick="goPgw('dashboard',document.querySelector('#nav-pegawai .nav-item'))">Batal</button>
-        <button class="btn btn-prim" onclick="alert('Aduan berjaya disimpan!\\nNombor Rujukan: ADU/2026/0248')">💾 Simpan &amp; Jana Nombor Rujukan</button>
+        <button class="btn btn-prim" onclick="simpanAduanBaharu()">💾 Simpan &amp; Jana Nombor Rujukan</button>
       </div>
     </div>
   </div>`;
+}
+
+let tambahLampiranFiles = [];
+
+function tambahLampiranPreview(input) {
+  tambahLampiranFiles = Array.from(input.files);
+  const list = document.getElementById('tambah-lampiran-list');
+  if (!list) return;
+  list.innerHTML = tambahLampiranFiles.map((f,i) => `
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:12px">
+      📎 ${f.name}
+      <span style="cursor:pointer;color:var(--txm);font-size:14px;line-height:1" onclick="tambahHapusLampiran(${i})">×</span>
+    </div>`).join('');
+  const box = document.getElementById('tambah-lampiran-box');
+  if (box) box.textContent = tambahLampiranFiles.length > 0 ? `📎 ${tambahLampiranFiles.length} fail dipilih — klik untuk tambah lagi` : '📎 Klik untuk muat naik dokumen atau gambar bukti';
+}
+
+function tambahHapusLampiran(idx) {
+  tambahLampiranFiles.splice(idx, 1);
+  const dt = new DataTransfer();
+  tambahLampiranFiles.forEach(f => dt.items.add(f));
+  const inp = document.getElementById('tambah-lampiran-input');
+  if (inp) inp.files = dt.files;
+  tambahLampiranPreview(inp);
+}
+
+function simpanAduanBaharu() {
+  const el = document.getElementById('pgw-tambah-content');
+  if (!el) return;
+  const inputs = el.querySelectorAll('input[type=text], input[type=date], select, textarea');
+  const tarikh    = inputs[0].value;
+  const saluran   = inputs[1].value;
+  const sulit     = document.getElementById('sulit-toggle-p').checked;
+  const namaPengadu = inputs[2].value.trim();
+  const hubungan  = inputs[3].value.trim();
+  const sekolah   = inputs[4].value;
+  const kategori  = inputs[5].value;
+  const keutamaan = inputs[6].value;
+  const ringkasan = inputs[7].value.trim();
+  const keterangan = inputs[8].value.trim();
+
+  if (!tarikh || sekolah === '-- Pilih Sekolah --') {
+    alert('Sila lengkapkan maklumat wajib: Tarikh, Sekolah, Kategori, dan Ringkasan Aduan.');
+    return;
+  }
+  if (!ringkasan) {
+    alert('Sila isi Ringkasan Aduan sebelum menyimpan.');
+    return;
+  }
+
+  const year = new Date().getFullYear();
+  const seq  = String(COMPLAINTS.length + 1).padStart(4, '0');
+  const newId = `MOE.${Date.now().toString().slice(-6)}`;
+  const refNo = `ADU/${year}/${seq}`;
+
+  const slaMap = { Kritikal:3, Tinggi:7, Sederhana:14, Rendah:30 };
+  const newCase = {
+    id: newId,
+    ref: refNo,
+    tarikh,
+    saluran,
+    sulit,
+    pengadu: sulit ? '(Sulit)' : namaPengadu,
+    hubungan: sulit ? '(Sulit)' : hubungan,
+    sekolah,
+    kategori,
+    keutamaan,
+    ringkasan,
+    keterangan,
+    lampiran: tambahLampiranFiles.map(f => f.name),
+    status: 'Baharu',
+    kemajuan: 0,
+    pegawai: PGW_OFFICER,
+    pasukan_penyiasat: null,
+    elapsed: 0,
+    sla: slaMap[keutamaan] || 14,
+    tarikh_kemaskini: tarikh,
+  };
+
+  COMPLAINTS.push(newCase);
+  tambahLampiranFiles = [];
+
+  // Refresh dashboard dan kes
+  const pgwDash = document.getElementById('pgw-dashboard-content');
+  if (pgwDash) pgwDash.dataset.rendered = '';
+  renderPDashboard();
+
+  const pgwKes = document.getElementById('pgw-kes-content');
+  if (pgwKes) { pgwKes.dataset.rendered = ''; renderPKes(); }
+
+  alert(`✅ Aduan berjaya disimpan!\n\nNombor Rujukan: ${refNo}\nID Kes: ${newId}\n\nAnda akan dibawa ke Dashboard.`);
+  goPgw('dashboard', document.querySelector('#nav-pegawai .nav-item'));
 }
 
 function toggleSulitP(cb) {
