@@ -1008,83 +1008,7 @@ textarea.fc{min-height:80px;resize:vertical}
 // ══════════════════════════════════════
 // DATA
 // ══════════════════════════════════════
-const COMPLAINTS = [
-  {id:'MOE.346012',tarikh:'2026-07-22',saluran:'SISPAA',jenis:'Aduan',
-   pengadu:'Ahmad Razif bin Mohd Noor',sekolah:'SK Taman Melati',
-   oyd:{nama:'Puan Fauziah binti Karim',ic:'760321-13-5028',jawatan:'Guru Kanan Matematik',gred:'DG44',tarikh_lantik:'2005-03-01',rekod_disiplin:'Tiada'},
-   kategori:'Kelakuan & Tatatertib',ringkasan:'Guru menggunakan bahasa kesat semasa PdP Matematik',keutamaan:'Tinggi',
-   status:'Dalam Siasatan',kemajuan:50,sla:15,elapsed:8,
-   pasukan_penyiasat:{ketua:'En. Kamarudin',setiausaha:'Pn. Siti Rahimah',ahli:'En. Hasrul Nizam'},
-   pegawai:'Pn. Siti Rahimah',dapatan:''},
-  {id:'MOE.346011',tarikh:'2026-07-21',saluran:'E-mel',jenis:'Aduan',
-   pengadu:'Nor Haslinda binti Razali',telefon:'013-4521788',emel:'norhaslinda@gmail.com',
-   sekolah:'SMK Wangsa Maju',
-   oyd:{nama:'En. Rozaimi bin Sulaiman',ic:'840512-13-6021',jawatan:'Guru Disiplin',gred:'DG41',tarikh_lantik:'2010-07-15',rekod_disiplin:'Tiada'},
-   kategori:'Kelakuan & Tatatertib',ringkasan:'Kes buli melibatkan murid Tingkatan 2',keutamaan:'Kritikal',
-   status:'Baharu',kemajuan:0,sla:15,elapsed:1,sulit:true,
-   pasukan_penyiasat:{ketua:'',setiausaha:'',ahli:''},pegawai:'—',dapatan:''},
-  {id:'MOE.346010',tarikh:'2026-07-20',saluran:'Walk-in',jenis:'Aduan',
-   pengadu:'Mohd Faizal bin Ismail',sekolah:'SMK Keramat',
-   oyd:{nama:'Puan Rosnah binti Hashim',ic:'720815-13-4012',jawatan:'Guru Besar',gred:'SSB F41',tarikh_lantik:'2018-01-02',rekod_disiplin:'Tiada'},
-   kategori:'Pengurusan Sekolah',ringkasan:'Masalah pengendalian kutipan yuran sekolah',keutamaan:'Sederhana',
-   status:'Dalam Semakan',kemajuan:25,sla:15,elapsed:4,
-   pasukan_penyiasat:{ketua:'En. Kamarudin',setiausaha:'Pn. Zalina',ahli:'En. Hasrul Nizam'},pegawai:'En. Kamarudin',dapatan:''},
-  {id:'MOE.346009',tarikh:'2026-07-18',saluran:'WhatsApp',jenis:'Bukan Aduan',sub_jenis:'Pertanyaan',
-   pengadu:'Sarina binti Abdullah',sekolah:'SK Setapak Jaya',
-   oyd:null,
-   kategori:'Ekspektasi Pelanggan',ringkasan:'Pertanyaan tentang penyelenggaraan tandas sekolah',keutamaan:'Sederhana',
-   status:'Menunggu Maklum Balas',kemajuan:75,sla:5,elapsed:3,
-   pasukan_penyiasat:{ketua:'Pn. Zalina',setiausaha:'',ahli:''},pegawai:'Pn. Zalina',dapatan:''},
-  {id:'MOE.346008',tarikh:'2026-07-17',saluran:'Surat Rasmi',jenis:'Aduan',
-   pengadu:'Persatuan Ibu Bapa SK Keramat',sekolah:'SK Keramat',
-   oyd:{nama:'En. Ramdzil bin Ahmad',ic:'680304-13-2011',jawatan:'Penolong Kanan Pentadbiran',gred:'DG48',tarikh_lantik:'2001-06-01',rekod_disiplin:'Ada — Surat Amaran 2019'},
-   kategori:'Integriti',ringkasan:'Dakwaan penyelewengan wang SUWA',keutamaan:'Kritikal',
-   status:'Dalam Siasatan',kemajuan:60,sla:15,elapsed:7,
-   pasukan_penyiasat:{ketua:'En. Hasrul Nizam',setiausaha:'En. Kamarudin',ahli:'Pn. Siti Rahimah'},pegawai:'En. Hasrul Nizam',dapatan:''},
-  {id:'MOE.346007',tarikh:'2026-07-15',saluran:'Media Sosial',jenis:'Aduan',
-   pengadu:'Tanpa Nama',sekolah:'SMK Taman Melati',
-   oyd:{nama:'En. Hafizuddin bin Omar',ic:'810623-13-7033',jawatan:'Guru Sejarah',gred:'DG41',tarikh_lantik:'2008-04-01',rekod_disiplin:'Tiada'},
-   kategori:'Kelakuan & Tatatertib',ringkasan:'Guru dilaporkan berlaku tidak adil dalam penilaian',keutamaan:'Tinggi',
-   status:'Dalam Siasatan',kemajuan:40,sla:15,elapsed:9,
-   pasukan_penyiasat:{ketua:'',setiausaha:'Pn. Siti Rahimah',ahli:''},pegawai:'Pn. Siti Rahimah',dapatan:''},
-  {id:'MOE.346006',tarikh:'2026-07-14',saluran:'E-mel',jenis:'Aduan',
-   pengadu:'Dr. Rohana binti Yusof',sekolah:'SMK Setapak',
-   oyd:{nama:'Puan Haslinda binti Musa',ic:'890701-13-8044',jawatan:'Guru Kaunseling',gred:'DG41',tarikh_lantik:'2014-01-15',rekod_disiplin:'Tiada'},
-   kategori:'Keselamatan',ringkasan:'Pelajar dilaporkan membawa benda berbahaya ke sekolah',keutamaan:'Kritikal',
-   status:'Selesai',kemajuan:100,sla:15,elapsed:6,
-   pasukan_penyiasat:{ketua:'En. Kamarudin',setiausaha:'En. Hasrul Nizam',ahli:'Pn. Zalina'},pegawai:'En. Kamarudin',dapatan:'Berasas'},
-  {id:'MOE.346005',tarikh:'2026-07-12',saluran:'Panggilan Telefon',jenis:'Bukan Aduan',sub_jenis:'Pertanyaan',
-   pengadu:'Azman bin Bakar',sekolah:'SK Wangsa Maju',
-   oyd:null,
-   kategori:'Ekspektasi Pelanggan',ringkasan:'Pertanyaan tentang pelajar ponteng kelas secara berulang',keutamaan:'Rendah',
-   status:'Selesai',kemajuan:100,sla:5,elapsed:3,
-   pasukan_penyiasat:{ketua:'En. Hasrul Nizam',setiausaha:'',ahli:''},pegawai:'En. Hasrul Nizam',dapatan:'Selesai'},
-  {id:'MOE.346004',tarikh:'2026-07-10',saluran:'SISPAA',jenis:'Aduan',
-   pengadu:'Lim Mei Ling',sekolah:'SK Keramat',
-   oyd:{nama:'En. Shahril bin Osman',ic:'750912-13-5019',jawatan:'Guru Sukan',gred:'DG41',tarikh_lantik:'2002-08-01',rekod_disiplin:'Tiada'},
-   kategori:'Kelakuan & Tatatertib',ringkasan:'Kes buli siber melibatkan pelajar Tahun 6',keutamaan:'Tinggi',
-   status:'Dalam Siasatan',kemajuan:30,sla:15,elapsed:14,
-   pasukan_penyiasat:{ketua:'',setiausaha:'Pn. Zalina',ahli:''},pegawai:'Pn. Zalina',dapatan:''},
-  {id:'MOE.346003',tarikh:'2026-07-08',saluran:'KPM/JPN',jenis:'Aduan',
-   pengadu:'Kementerian Pendidikan',sekolah:'SMK Wangsa Maju',
-   oyd:{nama:'En. Rizal bin Hashim',ic:'700228-13-3007',jawatan:'Penolong Kanan HEM',gred:'DG48',tarikh_lantik:'1998-09-01',rekod_disiplin:'Ada — Tatatertib 2015'},
-   kategori:'Integriti',ringkasan:'Aduan berkaitan kelakuan tidak berintegriti pentadbir',keutamaan:'Kritikal',
-   status:'Dalam Siasatan',kemajuan:55,sla:15,elapsed:16,
-   pasukan_penyiasat:{ketua:'En. Hasrul Nizam',setiausaha:'En. Kamarudin',ahli:'Pn. Siti Rahimah'},pegawai:'En. Hasrul Nizam',dapatan:''},
-  {id:'MOE.346002',tarikh:'2026-07-06',saluran:'Surat Layang',jenis:'Aduan',
-   pengadu:'Ahmad Fadzil bin Zainudin',telefon:'019-7832241',emel:'fadzil.z@gmail.com',
-   sekolah:'SK Taman Melati',
-   oyd:{nama:'Puan Noriza binti Rahman',ic:'780614-13-4016',jawatan:'Guru Tingkatan',gred:'DG41',tarikh_lantik:'2006-02-01',rekod_disiplin:'Tiada'},
-   kategori:'Kelakuan & Tatatertib',ringkasan:'Dakwaan pilih kasih dalam pengurusan staf',keutamaan:'Sederhana',
-   status:'Ditutup',kemajuan:100,sla:15,elapsed:18,sulit:true,
-   pasukan_penyiasat:{ketua:'En. Kamarudin',setiausaha:'Pn. Siti Rahimah',ahli:'En. Hasrul Nizam'},pegawai:'En. Kamarudin',dapatan:'Tidak Berasas'},
-  {id:'MOE.346001',tarikh:'2026-07-04',saluran:'Walk-in',jenis:'Bukan Aduan',sub_jenis:'Cadangan',
-   pengadu:'Norzahra binti Ahmad',sekolah:'SMK Keramat',
-   oyd:null,
-   kategori:'Ekspektasi Pelanggan',ringkasan:'Cadangan penambahbaikan sistem penilaian sekolah',keutamaan:'Rendah',
-   status:'Selesai',kemajuan:100,sla:5,elapsed:4,
-   pasukan_penyiasat:{ketua:'Pn. Siti Rahimah',setiausaha:'',ahli:''},pegawai:'Pn. Siti Rahimah',dapatan:'Selesai'},
-];
+const COMPLAINTS = [];
 
 const OFFICERS = [
   {nama:'Pn. Siti Rahimah',jawatan:'Penolong Pengarah',unit:'Unit Kurikulum',emel:'siti@ppd.edu.my',beban:8,kapasiti:12},
@@ -1093,28 +1017,7 @@ const OFFICERS = [
   {nama:'Pn. Zalina',jawatan:'Pegawai Pendidikan',unit:'Unit Keselamatan',emel:'zalina@ppd.edu.my',beban:5,kapasiti:10},
 ];
 
-const LOG_KERJA = [
-  {id:'LK/2026/001',no_aduan:'MOE.346012',tarikh:'2026-07-22',perkara:'Temu Bual Pengadu — Sesi Pertama',jenis:'Temu Bual Pengadu',
-   pihak:'Ahmad Razif bin Mohd Noor',jawatan:'Pengadu (Ibu Bapa Pelajar)',
-   catatan:'Temu bual pertama dengan pengadu. Beliau menceritakan kejadian pada 15 Julai 2026 ketika guru berkenaan dilaporkan menggunakan bahasa yang tidak sesuai semasa sesi PdP Matematik. Terdapat 3 orang saksi iaitu pelajar dari kelas yang sama. Pengadu bersedia memberikan kerjasama penuh dalam siasatan.',
-   bukti:['Pernyataan bertulis pengadu','Senarai nama saksi'],
-   kemajuan:50,tarikh_seterusnya:'2026-07-25',pegawai:'Pn. Siti Rahimah',status_kemaskini:'Dalam Siasatan'},
-  {id:'LK/2026/002',no_aduan:'MOE.346012',tarikh:'2026-07-20',perkara:'Semakan Rekod Kehadiran & Log PdP',jenis:'Semakan Dokumen',
-   pihak:'Pn. Hjh. Zurina binti Hasan',jawatan:'Pengetua SK Taman Melati',
-   catatan:'Semakan rekod kehadiran dan log PdP guru berkenaan untuk bulan Jun dan Julai 2026. Tiada rekod tatatertib sebelum ini ditemui. Buku rekod mengajar diserahkan untuk semakan lanjut oleh pihak PPD.',
-   bukti:['Rekod kehadiran guru','Log buku rekod mengajar','Rekod PdP Julai 2026'],
-   kemajuan:30,tarikh_seterusnya:'2026-07-22',pegawai:'Pn. Siti Rahimah',status_kemaskini:'Dalam Siasatan'},
-  {id:'LK/2026/003',no_aduan:'MOE.346007',tarikh:'2026-07-19',perkara:'Temu Bual OYD — En. Hafizuddin',jenis:'Temu Bual OYD',
-   pihak:'En. Hafizuddin bin Omar',jawatan:'Guru Mata Pelajaran Sejarah',
-   catatan:'Guru berkenaan dinafikan aduan dan menyatakan bahawa beliau tidak pernah berlaku tidak adil dalam penilaian. Beliau bersedia untuk menyerahkan semua rekod penilaian untuk semakan pihak PPD.',
-   bukti:['Pernyataan lisan guru','Rekod penilaian Jun-Julai 2026'],
-   kemajuan:40,tarikh_seterusnya:'2026-07-23',pegawai:'Pn. Siti Rahimah',status_kemaskini:'Dalam Siasatan'},
-  {id:'LK/2026/004',no_aduan:'MOE.346007',tarikh:'2026-07-16',perkara:'Lawatan Tapak — Semakan Rekod Penilaian',jenis:'Lawatan Tapak',
-   pihak:'Pentadbiran SMK Taman Melati',jawatan:'Penolong Kanan HEM',
-   catatan:'Lawatan tapak ke sekolah untuk mendapatkan rekod penilaian rasmi. Semakan dilakukan ke atas markah peperiksaan pertengahan tahun. Ditemui beberapa anomali dalam penandaan kertas soalan.',
-   bukti:['Foto rekod penilaian','Kertas soalan bertanda','Laporan ringkas lawatan tapak'],
-   kemajuan:25,tarikh_seterusnya:'2026-07-19',pegawai:'Pn. Siti Rahimah',status_kemaskini:'Dalam Siasatan'},
-];
+const LOG_KERJA = [];
 
 const LK_JENIS_CLR = {
   'Temu Bual OYD':'#2563EB','Temu Bual Pengadu':'#1D4ED8','Temu Bual Saksi':'#3B82F6',
@@ -1140,32 +1043,28 @@ const SENARAI_SEMAK_ITEMS = [
   {id:'ss11', label:'Dokumentasi difailkan dan disimpan mengikut prosedur', pihak:'Admin'},
 ];
 
-const SEMAK_STATE = {
-  'MOE.346006': new Set(['ss01','ss02','ss03','ss04a','ss04b','ss04c','ss04d','ss05','ss06','ss07','ss08','ss10','ss11']),
-  'MOE.346012': new Set(['ss01','ss02','ss03']),
-  'MOE.346008': new Set(['ss01','ss02','ss03','ss04a','ss04b']),
-};
+const SEMAK_STATE = {};
 
-const MONTHLY =[28,35,31,44,38,29,42,0,0,0,0,0].map((v,i)=>i<7?v:0);
+const MONTHLY = [0,0,0,0,0,0,0,0,0,0,0,0];
 const MONTHS_LBL = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
 
 const CATEGORIES = [
-  {nama:'Tatakelakuan Guru',count:52,clr:'#2563EB'},
-  {nama:'Buli',count:38,clr:'#C8102E'},
-  {nama:'Pengurusan Sekolah',count:34,clr:'#15803D'},
-  {nama:'Disiplin Murid',count:31,clr:'#D97706'},
-  {nama:'Kewangan',count:27,clr:'#7C3AED'},
-  {nama:'Infrastruktur',count:22,clr:'#0891B2'},
-  {nama:'Lain-lain',count:43,clr:'#94A3B8'},
+  {nama:'Tatakelakuan Guru',count:0,clr:'#2563EB'},
+  {nama:'Buli',count:0,clr:'#C8102E'},
+  {nama:'Pengurusan Sekolah',count:0,clr:'#15803D'},
+  {nama:'Disiplin Murid',count:0,clr:'#D97706'},
+  {nama:'Kewangan',count:0,clr:'#7C3AED'},
+  {nama:'Infrastruktur',count:0,clr:'#0891B2'},
+  {nama:'Lain-lain',count:0,clr:'#94A3B8'},
 ];
 
 const KPI = [
-  {lbl:'Jumlah Diterima',val:247,sub:'Tahun 2026',clr:'#2563EB',ico:'📥',trend:'+12%'},
-  {lbl:'Aduan Baharu',val:18,sub:'Bulan ini',clr:'#6D28D9',ico:'🆕',trend:'+3'},
-  {lbl:'Dalam Siasatan',val:45,sub:'Sedang diproses',clr:'#B45309',ico:'🔍',trend:''},
-  {lbl:'Selesai',val:98,sub:'Tahun 2026',clr:'#15803D',ico:'✅',trend:'+8%'},
-  {lbl:'Melebihi SLA',val:7,sub:'Perlu tindakan segera',clr:'#C8102E',ico:'⏰',trend:'Kritikal'},
-  {lbl:'Purata Penyelesaian',val:'8.3',sub:'Hari per kes',clr:'#0891B2',ico:'📊',trend:'Hari'},
+  {lbl:'Jumlah Diterima',val:0,sub:'Tahun 2026',clr:'#2563EB',ico:'📥',trend:''},
+  {lbl:'Aduan Baharu',val:0,sub:'Bulan ini',clr:'#6D28D9',ico:'🆕',trend:''},
+  {lbl:'Dalam Siasatan',val:0,sub:'Sedang diproses',clr:'#B45309',ico:'🔍',trend:''},
+  {lbl:'Selesai',val:0,sub:'Tahun 2026',clr:'#15803D',ico:'✅',trend:''},
+  {lbl:'Melebihi SLA',val:0,sub:'Perlu tindakan segera',clr:'#C8102E',ico:'⏰',trend:''},
+  {lbl:'Purata Penyelesaian',val:0,sub:'Hari per kes',clr:'#0891B2',ico:'📊',trend:'Hari'},
 ];
 
 const USERS = [
