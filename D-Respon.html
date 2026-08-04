@@ -870,12 +870,6 @@ textarea.fc{min-height:80px;resize:vertical}
         </div>
       </div>
 
-      <div class="fg mb14"><label class="flbl">Nama Sekolah <span>*</span></label>
-        <select class="fc">
-          <option>-- Pilih Sekolah --</option>
-          <option>SK Taman Melati</option><option>SK Wangsa Maju</option><option>SMK Wangsa Maju</option><option>SMK Keramat</option><option>SK Keramat</option><option>SMK Taman Melati</option><option>SK Setapak Jaya</option><option>SMK Setapak</option>
-        </select>
-      </div>
       <div class="form-row mb14">
         <div class="fg"><label class="flbl">Kategori <span>*</span></label>
           <select class="fc">
@@ -1972,9 +1966,6 @@ function renderPTambah() {
           <span>ℹ️</span><div>Maklumat pengadu akan <strong>direkod dan disimpan secara selamat</strong>, tetapi <strong>disembunyikan daripada paparan umum</strong>.</div>
         </div>
       </div>
-      <div class="fg mb14"><label class="flbl">Nama Sekolah <span>*</span></label>
-        <select class="fc"><option>-- Pilih Sekolah --</option><option>SK Taman Melati</option><option>SMK Wangsa Maju</option><option>SMK Keramat</option><option>SK Keramat</option><option>SK Setapak Jaya</option><option>SMK Taman Melati</option><option>SMK Setapak</option></select>
-      </div>
       <div class="form-row mb14">
         <div class="fg"><label class="flbl">Kategori Aduan <span>*</span></label>
           <select class="fc"><option>Tatakelakuan Guru</option><option>Disiplin Murid</option><option>Buli</option><option>Pengurusan Sekolah</option><option>Kewangan</option><option>Infrastruktur</option><option>Keselamatan</option><option>Integriti</option><option>Lain-lain</option></select>
@@ -2056,9 +2047,8 @@ function simpanAduanBaharu() {
   const sulit      = document.getElementById('sulit-toggle-p').checked;
   const namaPengadu= el.querySelectorAll('input[type=text]')[0].value.trim();
   const hubungan   = el.querySelectorAll('input[type=text]')[1].value.trim();
-  const sekolah    = el.querySelectorAll('select')[1].value;
-  const kategori   = el.querySelectorAll('select')[2].value;
-  const keutamaan  = el.querySelectorAll('select')[3].value;
+  const kategori   = el.querySelectorAll('select')[1].value;
+  const keutamaan  = el.querySelectorAll('select')[2].value;
   const ringkasan  = (document.getElementById('ta-ringkasan')||{value:''}).value.trim() || el.querySelectorAll('input[type=text]')[2]?.value.trim() || '';
   const keterangan = (document.getElementById('ta-keterangan')||{value:''}).value.trim() || el.querySelector('textarea')?.value.trim() || '';
 
@@ -2072,8 +2062,8 @@ function simpanAduanBaharu() {
     hubungan : (document.getElementById('ta-oyd-hubungan')||{value:''}).value,
   };
 
-  if (!tarikh || sekolah === '-- Pilih Sekolah --') {
-    alert('Sila lengkapkan maklumat wajib: Tarikh, Sekolah, Kategori, dan Ringkasan Aduan.');
+  if (!tarikh) {
+    alert('Sila lengkapkan maklumat wajib: Tarikh, Kategori, dan Ringkasan Aduan.');
     return;
   }
   if (!ringkasan) {
@@ -2099,7 +2089,6 @@ function simpanAduanBaharu() {
     sulit,
     pengadu: sulit ? '(Sulit)' : namaPengadu,
     hubungan: sulit ? '(Sulit)' : hubungan,
-    sekolah,
     kategori,
     keutamaan,
     ringkasan,
