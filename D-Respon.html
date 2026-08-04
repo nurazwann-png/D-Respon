@@ -499,10 +499,11 @@ textarea.fc{min-height:80px;resize:vertical}
       <button id="admin-mode-btn" onclick="toggleAdminMode()" style="width:100%;padding:7px 12px;border-radius:7px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .2s;text-align:left">🔒 Mod Admin</button>
       <div class="user-info">
         <div class="avatar">NI</div>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="uname">Nurazwan Ismail</div>
           <div class="urole">Pentadbir PPD</div>
         </div>
+        <button onclick="doLogout()" title="Log Keluar" style="background:rgba(255,255,255,.1);border:none;border-radius:6px;padding:5px 8px;cursor:pointer;color:rgba(255,255,255,.6);font-size:13px;flex-shrink:0" onmouseover="this.style.background='rgba(239,68,68,.3)';this.style.color='#fca5a5'" onmouseout="this.style.background='rgba(255,255,255,.1)';this.style.color='rgba(255,255,255,.6)'">⏻</button>
       </div>
     </div>
   </nav>
@@ -999,7 +1000,7 @@ textarea.fc{min-height:80px;resize:vertical}
     <div class="modal-bdy" id="detail-body"></div>
     <div class="modal-ftr">
       <button class="btn btn-outline" onclick="closeModal('modal-detail')">Tutup</button>
-      <button class="btn btn-prim" onclick="alert('Rekod dikemaskini')">Kemaskini Status</button>
+      <button class="btn btn-prim" id="detail-save-btn" onclick="saveSiasatan()" style="display:none">Kemaskini Status</button>
     </div>
   </div>
 </div>
@@ -1069,7 +1070,7 @@ const KPI = [
   {lbl:'Purata Penyelesaian',val:0,sub:'Hari per kes',clr:'#0891B2',ico:'📊',trend:'Hari'},
 ];
 
-let USERS = [
+const USERS_DEFAULT = [
   {nama:'Ahmad Razif',      jawatan:'Super Admin',             unit:'ICT',         peranan:'Super Admin',        status:'Aktif',terakhir:'2026-07-24',emel:'ahmad.razif@ppd.edu.my'},
   {nama:'Nurazwan Ismail',  jawatan:'Penolong Pengarah',       unit:'Pentadbiran', peranan:'Pentadbir PPD',       status:'Aktif',terakhir:'2026-07-24',emel:'nurazwan@ppd.edu.my'},
   {nama:'Pn. Siti Rahimah', jawatan:'Penolong Pengarah',       unit:'Kurikulum',   peranan:'Pegawai Penyiasat',  status:'Aktif',terakhir:'2026-07-23',emel:'siti@ppd.edu.my'},
@@ -1078,6 +1079,8 @@ let USERS = [
   {nama:'Pn. Zalina',       jawatan:'Pegawai Pendidikan',      unit:'Keselamatan', peranan:'Pegawai Penyiasat',  status:'Aktif',terakhir:'2026-07-21',emel:'zalina@ppd.edu.my'},
   {nama:"Dato' Hj. Ramlan", jawatan:'Pegawai Pendidikan Daerah',unit:'Pengurusan', peranan:'Pengurusan PPD',      status:'Aktif',terakhir:'2026-07-24',emel:'ramlan@ppd.edu.my'},
 ];
+let USERS = (()=>{ try { const s=localStorage.getItem('drusers'); return s?JSON.parse(s):USERS_DEFAULT; } catch(e){ return USERS_DEFAULT; } })();
+function saveUsers(){ try{ localStorage.setItem('drusers', JSON.stringify(USERS)); }catch(e){} }
 
 // ══════════════════════════════════════
 // ROLE MANAGEMENT
@@ -1276,6 +1279,11 @@ function switchRole() {
   sessionStorage.removeItem('dpgw');
   sessionStorage.removeItem('dgauth');
   document.getElementById('role-screen').style.display = 'flex';
+}
+
+function doLogout() {
+  if (currentRole === 'pegawai' && googleAuthUser) { signOutGoogle(); return; }
+  switchRole();
 }
 
 // ── PEGAWAI NAVIGATION ──
@@ -3322,6 +3330,7 @@ function simpanPengguna() {
     if (USERS.find(u => u.nama === nama)) { alert('Pengguna dengan nama ini sudah wujud.'); return; }
     USERS.push({nama, jawatan, unit, peranan, status:'Aktif', terakhir: today, emel});
   }
+  saveUsers();
   closeUserModal();
   renderUsers();
 }
@@ -3331,6 +3340,7 @@ function padamPengguna(idx) {
   if (!u) return;
   if (confirm(`Padam pengguna "${u.nama}" daripada sistem?\n\nTindakan ini tidak boleh dibatalkan.`)) {
     USERS.splice(idx, 1);
+    saveUsers();
     renderUsers();
   }
 }
@@ -3654,6 +3664,12 @@ function showDetail(id) {
       <div><div class="flbl" style="font-weight:700">Sekolah</div><div>${c.sekolah}</div></div>
     </div>
     <div class="fg mb14"><div class="flbl" style="font-weight:700">Ringkasan</div><div style="background:var(--surf2);padding:10px;border-radius:6px;border:1px solid var(--bd);font-size:13px">${c.ringkasan}</div></div>
+    ${c.keterangan?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Keterangan Terperinci</div><div style="background:var(--surf2);padding:10px;border-radius:6px;border:1px solid var(--bd);font-size:13px">${c.keterangan}</div></div>`:''}
+    ${c.lampiran&&c.lampiran.length?`<div class="fg mb14"><div class="flbl" style="font-weight:700">📎 Lampiran / Dokumen Sokongan</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+        ${c.lampiran.map(f=>`<span style="background:var(--surf2);border:1px solid var(--bd);border-radius:5px;padding:5px 12px;font-size:12px;display:flex;align-items:center;gap:5px">📄 ${f}</span>`).join('')}
+      </div>
+    </div>`:''}
     <div class="form-row">
       <div><div class="flbl" style="font-weight:700">Pasukan Penyiasat</div>
         <div style="font-size:12.5px">
@@ -3708,33 +3724,62 @@ function showDetail(id) {
         </div>`
     }
   </div>
-  <div id="dt-semak" style="display:none">${renderSemakChecklist(c.id)}</div>
+  <div id="dt-semak" style="display:none">${renderSemakChecklist(c.id, currentRole==='admin')}</div>
   <div id="dt-inv" style="display:none">
-    <div class="fg mb14">
-      <label class="flbl">Kemaskini Status</label>
-      <select class="fc" style="max-width:260px">
-        <option>${c.status}</option>
-        ${['Baharu','Dalam Semakan','Dalam Siasatan','Menunggu Maklum Balas','Selesai','Ditutup'].filter(s=>s!==c.status).map(s=>`<option>${s}</option>`).join('')}
-      </select>
-    </div>
-    <div class="fg mb14">
-      <label class="flbl">Kemajuan (%)</label>
-      <input type="range" min="0" max="100" value="${c.kemajuan}" style="width:100%" oninput="this.nextElementSibling.textContent=this.value+'%'">
-      <span style="font-size:12px;color:var(--txm)">${c.kemajuan}%</span>
-    </div>
-    <div class="fg mb14"><label class="flbl">Catatan Siasatan</label><textarea class="fc" rows="3" placeholder="Tambah catatan siasatan, dapatan, atau keterangan temu bual…"></textarea></div>
-    <div class="fg mb14"><label class="flbl">Muat Naik Bukti</label>
-      <div style="border:2px dashed var(--bds);border-radius:8px;padding:14px;text-align:center;color:var(--txm);font-size:12px;cursor:pointer">📎 Klik untuk muat naik dokumen atau gambar bukti</div>
-    </div>
-    <div class="fg">
-      <label class="flbl">Keputusan Siasatan</label>
-      <select class="fc" style="max-width:260px">
-        <option>-- Belum Ditentukan --</option>
-        <option>Aduan Berasas</option>
-        <option>Aduan Tidak Berasas</option>
-        <option>Sebahagian Berasas</option>
-      </select>
-    </div>
+    ${currentRole==='admin'
+      ? `<div style="background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:16px">
+          <div style="font-size:10.5px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">📋 Laporan Kemajuan Siasatan (Pantauan Admin)</div>
+          <div class="form-row mb14">
+            <div><div class="flbl" style="font-weight:700">Status Semasa</div><div style="margin-top:4px">${statusBadge(c.status)}</div></div>
+            <div><div class="flbl" style="font-weight:700">Keputusan Siasatan</div>
+              <div style="font-weight:600;margin-top:4px">${c.keputusan||'<span style="color:var(--txm)">Belum ditentukan</span>'}</div>
+            </div>
+          </div>
+          <div class="fg mb14">
+            <div class="flbl" style="font-weight:700">Kemajuan (%)</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+              <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${c.kemajuan}%;background:${c.kemajuan===100?'#16A34A':c.kemajuan>=50?'#D97706':'#2563EB'}"></div></div>
+              <span style="font-weight:700;font-variant-numeric:tabular-nums">${c.kemajuan}%</span>
+            </div>
+          </div>
+          ${c.catatan_siasatan?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Catatan Siasatan</div>
+            <div style="background:var(--surf);border:1px solid var(--bd);border-radius:6px;padding:10px 12px;font-size:13px;margin-top:4px">${c.catatan_siasatan}</div>
+          </div>`:`<div style="color:var(--txm);font-size:12.5px;font-style:italic;margin-bottom:14px">Tiada catatan siasatan direkod setakat ini.</div>`}
+          ${c.lampiran&&c.lampiran.length?`<div class="fg"><div class="flbl" style="font-weight:700">Bukti / Lampiran</div>
+            <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">
+              ${c.lampiran.map(f=>`<span style="background:var(--surf);border:1px solid var(--bd);border-radius:5px;padding:4px 10px;font-size:12px">📎 ${f}</span>`).join('')}
+            </div>
+          </div>`:''}
+        </div>`
+      : `<div class="fg mb14">
+          <label class="flbl">Kemaskini Status</label>
+          <select class="fc" style="max-width:260px" id="inv-status-sel">
+            <option>${c.status}</option>
+            ${['Baharu','Dalam Semakan','Dalam Siasatan','Menunggu Maklum Balas','Selesai','Ditutup'].filter(s=>s!==c.status).map(s=>`<option>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg mb14">
+          <label class="flbl">Kemajuan (%)</label>
+          <input type="range" min="0" max="100" value="${c.kemajuan}" style="width:100%" id="inv-kemajuan-range" oninput="this.nextElementSibling.textContent=this.value+'%'">
+          <span style="font-size:12px;color:var(--txm)">${c.kemajuan}%</span>
+        </div>
+        <div class="fg mb14"><label class="flbl">Catatan Siasatan</label><textarea class="fc" rows="3" id="inv-catatan" placeholder="Tambah catatan siasatan, dapatan, atau keterangan temu bual…">${c.catatan_siasatan||''}</textarea></div>
+        <div class="fg mb14"><label class="flbl">Muat Naik Bukti</label>
+          <div style="border:2px dashed var(--bds);border-radius:8px;padding:14px;text-align:center;color:var(--txm);font-size:12px;cursor:pointer">📎 Klik untuk muat naik dokumen atau gambar bukti</div>
+        </div>
+        ${c.lampiran&&c.lampiran.length?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Lampiran Sedia Ada</div>
+          <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">
+            ${c.lampiran.map(f=>`<span style="background:var(--surf2);border:1px solid var(--bd);border-radius:5px;padding:4px 10px;font-size:12px">📄 ${f}</span>`).join('')}
+          </div>
+        </div>`:''}
+        <div class="fg">
+          <label class="flbl">Keputusan Siasatan</label>
+          <select class="fc" style="max-width:260px" id="inv-keputusan-sel">
+            <option value="">-- Belum Ditentukan --</option>
+            ${['Aduan Berasas','Aduan Tidak Berasas','Sebahagian Berasas'].map(o=>`<option${c.keputusan===o?' selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>`
+    }
   </div>
   <div id="dt-log" style="display:none">
     <div class="timeline">
@@ -3745,7 +3790,31 @@ function showDetail(id) {
       ${c.kemajuan===100?`<div class="tl-item" style="margin-bottom:0"><div class="tl-time">+${c.elapsed} hari</div><div class="tl-ttl">Siasatan Selesai</div><div class="tl-desc">Laporan eksekutif dijana dan dikemukakan kepada pengurusan PPD</div></div>`:''}
     </div>
   </div>`;
+  const saveBtn = document.getElementById('detail-save-btn');
+  if (saveBtn) saveBtn.style.display = currentRole === 'pegawai' ? '' : 'none';
   openModal('modal-detail');
+}
+
+function saveSiasatan() {
+  const titleEl = document.getElementById('detail-title');
+  const id = titleEl ? titleEl.textContent.replace('Butiran Aduan — ','').trim() : '';
+  const c = COMPLAINTS.find(x=>x.id===id);
+  if(!c) return;
+  const statusSel = document.getElementById('inv-status-sel');
+  const kemajuanEl = document.getElementById('inv-kemajuan-range');
+  const catatanEl = document.getElementById('inv-catatan');
+  const keputusanSel = document.getElementById('inv-keputusan-sel');
+  if(statusSel) c.status = statusSel.value;
+  if(kemajuanEl) c.kemajuan = parseInt(kemajuanEl.value);
+  if(catatanEl) c.catatan_siasatan = catatanEl.value.trim();
+  if(keputusanSel) c.keputusan = keputusanSel.value;
+  c.tarikh_kemaskini = new Date().toISOString().slice(0,10);
+  closeModal('modal-detail');
+  updateAdminBadges();
+  renderPKes();
+  renderPDashboard();
+  renderDashboard();
+  filterComplaints();
 }
 
 function revealSulit(id) {
@@ -3771,12 +3840,13 @@ function dtab(el, target) {
   });
 }
 
-function renderSemakChecklist(caseId) {
+function renderSemakChecklist(caseId, readOnly) {
   const done = SEMAK_STATE[caseId] || new Set();
   const rows = SENARAI_SEMAK_ITEMS.map((item,i)=>{
     const checked = done.has(item.id);
     const pihakClr = item.pihak==='Admin'?'#1D4ED8':item.pihak==='Ketua'?'#7C3AED':'#15803D';
-    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:7px;background:${checked?'#F0FDF4':'var(--surf2)'};border:1px solid ${checked?'#6EE7B7':'var(--bd)'};margin-bottom:6px;cursor:pointer" onclick="toggleSemak('${caseId}','${item.id}',this)">
+    const clickAttr = readOnly ? '' : `onclick="toggleSemak('${caseId}','${item.id}',this)"`;
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:7px;background:${checked?'#F0FDF4':'var(--surf2)'};border:1px solid ${checked?'#6EE7B7':'var(--bd)'};margin-bottom:6px;${readOnly?'':'cursor:pointer'}" ${clickAttr}>
       <div style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:${checked?'#16A34A':'var(--bd)'};display:flex;align-items:center;justify-content:center;margin-top:1px">
         ${checked?'<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}
       </div>
@@ -3788,13 +3858,14 @@ function renderSemakChecklist(caseId) {
   }).join('');
   const pct = Math.round((done.size/SENARAI_SEMAK_ITEMS.length)*100);
   return `<div>
+    ${readOnly?`<div style="font-size:11px;color:var(--txm);margin-bottom:10px;background:var(--surf2);border:1px solid var(--bd);border-radius:6px;padding:7px 12px">👁 Paparan pantauan — hanya pegawai penyiasat boleh mengemaskini senarai semak ini</div>`:''}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${pct}%"></div></div>
       <span style="font-weight:700;font-size:13px;min-width:36px">${pct}%</span>
       <span style="font-size:11.5px;color:var(--txm)">${done.size}/${SENARAI_SEMAK_ITEMS.length} langkah</span>
     </div>
     ${rows}
-    <div style="font-size:11px;color:var(--txm);margin-top:8px;text-align:center">Klik item untuk tandakan selesai / belum selesai</div>
+    ${readOnly?'':`<div style="font-size:11px;color:var(--txm);margin-top:8px;text-align:center">Klik item untuk tandakan selesai / belum selesai</div>`}
   </div>`;
 }
 
