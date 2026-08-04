@@ -1,0 +1,10 @@
+runtime: python313
+
+handlers:
+- url: /
+  static_files: D-Respon.html
+  upload: D-Respon.html
+
+- url: /.*
+  static_files: D-Respon.html
+  upload: D-Respon.html
