@@ -1522,11 +1522,11 @@ function renderPLogKerja() {
         </div>
         <div>
           <label class="flbl">Dokumen / Bukti</label>
-          <div style="display:flex;gap:6px">
-            <input type="text" class="fc" id="lk-bukti-input" placeholder="Nama dokumen…" onkeydown="if(event.key==='Enter'){lkAddBukti();event.preventDefault()}" style="font-size:12.5px">
-            <button class="btn btn-outline btn-sm" style="flex-shrink:0;white-space:nowrap" onclick="lkAddBukti()">+ Tambah</button>
+          <input type="file" id="lk-bukti-file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none" onchange="lkBuktiFileChange(this)">
+          <div style="border:2px dashed var(--bds);border-radius:8px;padding:10px 14px;text-align:center;color:var(--txm);font-size:12px;cursor:pointer" id="lk-bukti-drop" onclick="document.getElementById('lk-bukti-file').click()">
+            📎 Klik untuk muat naik rakaman, video, gambar atau dokumen
           </div>
-          <div id="lk-bukti-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;min-height:18px"></div>
+          <div id="lk-bukti-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;min-height:0"></div>
         </div>
         <div style="display:flex;gap:8px;padding-bottom:1px">
           <button class="btn btn-outline" onclick="lkReset()">↺</button>
@@ -1666,17 +1666,47 @@ function lkSelectCase(sel) {
   if (filter) { filter.value = sel.value; lkFilterList(filter); }
 }
 
-function lkAddBukti() {
-  const input = document.getElementById('lk-bukti-input');
+function lkBuktiFileChange(input) {
+  const newFiles = Array.from(input.files);
+  newFiles.forEach(f => { if (!lkBuktiList.includes(f.name)) lkBuktiList.push(f.name); });
   const chips = document.getElementById('lk-bukti-chips');
-  if (!input||!chips||!input.value.trim()) return;
-  const val = input.value.trim();
-  lkBuktiList.push(val);
-  const chip = document.createElement('span');
-  chip.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:500';
-  chip.innerHTML = `📎 ${val} <button onclick="this.parentElement.remove();lkBuktiList=lkBuktiList.filter(x=>x!=='${val}')" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:13px;padding:0;line-height:1">×</button>`;
-  chips.appendChild(chip);
-  input.value='';
+  const drop  = document.getElementById('lk-bukti-drop');
+  if (!chips) return;
+  chips.innerHTML = lkBuktiList.map((name, i) => {
+    const ext = name.split('.').pop().toLowerCase();
+    const ico = ['mp4','mov','avi','mkv'].includes(ext) ? '🎬'
+              : ['mp3','wav','m4a','ogg','aac'].includes(ext) ? '🎙️'
+              : ['jpg','jpeg','png','gif','webp','heic'].includes(ext) ? '🖼️'
+              : ['pdf'].includes(ext) ? '📕'
+              : '📄';
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500">
+      ${ico} ${name}
+      <button onclick="lkRemoveBukti(${i})" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:14px;padding:0;line-height:1">×</button>
+    </span>`;
+  }).join('');
+  if (drop) drop.textContent = lkBuktiList.length ? `📎 ${lkBuktiList.length} fail dipilih — klik untuk tambah lagi` : '📎 Klik untuk muat naik rakaman, video, gambar atau dokumen';
+}
+
+function lkRemoveBukti(idx) {
+  lkBuktiList.splice(idx, 1);
+  const fi = document.getElementById('lk-bukti-file');
+  if (fi) { const dt = new DataTransfer(); fi.files = dt.files; }
+  lkBuktiFileChange({ files: [] });
+  // Re-render chips from list
+  const chips = document.getElementById('lk-bukti-chips');
+  const drop  = document.getElementById('lk-bukti-drop');
+  if (chips) chips.innerHTML = lkBuktiList.map((name, i) => {
+    const ext = name.split('.').pop().toLowerCase();
+    const ico = ['mp4','mov','avi','mkv'].includes(ext) ? '🎬'
+              : ['mp3','wav','m4a','ogg','aac'].includes(ext) ? '🎙️'
+              : ['jpg','jpeg','png','gif','webp','heic'].includes(ext) ? '🖼️'
+              : ['pdf'].includes(ext) ? '📕' : '📄';
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500">
+      ${ico} ${name}
+      <button onclick="lkRemoveBukti(${i})" style="background:none;border:none;cursor:pointer;color:#6B7280;font-size:14px;padding:0;line-height:1">×</button>
+    </span>`;
+  }).join('');
+  if (drop) drop.textContent = lkBuktiList.length ? `📎 ${lkBuktiList.length} fail dipilih — klik untuk tambah lagi` : '📎 Klik untuk muat naik rakaman, video, gambar atau dokumen';
 }
 
 function lkFilterList(sel) {
@@ -1689,6 +1719,8 @@ function lkFilterList(sel) {
 function lkReset() {
   ['lk-no-aduan','lk-pihak','lk-jawatan','lk-catatan'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const chips = document.getElementById('lk-bukti-chips'); if(chips) chips.innerHTML='';
+  const drop  = document.getElementById('lk-bukti-drop'); if(drop) drop.textContent='📎 Klik untuk muat naik rakaman, video, gambar atau dokumen';
+  const fi    = document.getElementById('lk-bukti-file'); if(fi){ const dt=new DataTransfer(); fi.files=dt.files; }
   lkBuktiList=[];
   const info=document.getElementById('lk-case-info');if(info)info.style.display='none';
 }
