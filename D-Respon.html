@@ -926,27 +926,15 @@ textarea.fc{min-height:80px;resize:vertical}
       </div>
       <div class="fg mb14">
         <label class="flbl">Ketua Penyiasat <span>*</span></label>
-        <select class="fc" id="agih-ketua">
-          <option value="">— Pilih Ketua Penyiasat —</option>
-          <option>Pn. Siti Rahimah</option><option>En. Kamarudin</option>
-          <option>En. Hasrul Nizam</option><option>Pn. Zalina</option>
-        </select>
+        <select class="fc" id="agih-ketua"><option value="">— Pilih Ketua Penyiasat —</option></select>
       </div>
       <div class="fg mb14">
         <label class="flbl">Setiausaha Penyiasat <span>*</span></label>
-        <select class="fc" id="agih-setiausaha">
-          <option value="">— Pilih Setiausaha —</option>
-          <option>Pn. Siti Rahimah</option><option>En. Kamarudin</option>
-          <option>En. Hasrul Nizam</option><option>Pn. Zalina</option>
-        </select>
+        <select class="fc" id="agih-setiausaha"><option value="">— Pilih Setiausaha —</option></select>
       </div>
       <div class="fg mb14">
         <label class="flbl">Ahli Penyiasat</label>
-        <select class="fc" id="agih-ahli">
-          <option value="">— Pilih Ahli (pilihan) —</option>
-          <option>Pn. Siti Rahimah</option><option>En. Kamarudin</option>
-          <option>En. Hasrul Nizam</option><option>Pn. Zalina</option>
-        </select>
+        <select class="fc" id="agih-ahli"><option value="">— Pilih Ahli (pilihan) —</option></select>
       </div>
       <div class="fg mb14">
         <label class="flbl">Tarikh Siasatan Bermula</label>
@@ -1237,11 +1225,17 @@ function signOutGoogle() {
   }
   googleAuthUser = null;
   PGW_OFFICER    = 'Pn. Siti Rahimah';
+  sessionStorage.removeItem('drole');
+  sessionStorage.removeItem('dpgw');
+  sessionStorage.removeItem('dgauth');
   switchRole();
 }
 
 function selectRole(role) {
   currentRole = role;
+  sessionStorage.setItem('drole', role);
+  sessionStorage.setItem('dpgw', PGW_OFFICER);
+  if (googleAuthUser) sessionStorage.setItem('dgauth', JSON.stringify(googleAuthUser));
   document.getElementById('role-screen').style.display = 'none';
 
   const badge = document.getElementById('role-badge-btn');
@@ -1284,6 +1278,9 @@ function selectRole(role) {
 
 function switchRole() {
   currentRole = null;
+  sessionStorage.removeItem('drole');
+  sessionStorage.removeItem('dpgw');
+  sessionStorage.removeItem('dgauth');
   document.getElementById('role-screen').style.display = 'flex';
 }
 
@@ -2531,12 +2528,30 @@ function openAgih(id) {
   const c = COMPLAINTS.find(x=>x.id===id);
   if(!c) return;
   document.getElementById('agih-no-aduan').textContent = c.id;
-  document.getElementById('agih-ringkasan').textContent = c.ringkasan;
-  const pgwSel = document.getElementById('agih-pegawai');
-  if(pgwSel && c.pegawai && c.pegawai!=='—') pgwSel.value = c.pegawai;
+  document.getElementById('agih-ringkasan').textContent = c.ringkasan||'';
+
+  // Populate dropdowns from USERS (Pegawai Penyiasat only)
+  const pgwList = USERS.filter(u=>u.peranan==='Pegawai Penyiasat');
+  const opts = pgwList.map(u=>`<option value="${u.nama}">${u.nama} (${u.unit||''})</option>`).join('');
+  ['agih-ketua','agih-setiausaha','agih-ahli'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    const blank=i===2?'— Pilih Ahli (pilihan) —':(i===0?'— Pilih Ketua Penyiasat —':'— Pilih Setiausaha —');
+    el.innerHTML=`<option value="">${blank}</option>`+opts;
+  });
+
+  // Pre-fill if already assigned
+  if(c.pasukan_penyiasat){
+    document.getElementById('agih-ketua').value      = c.pasukan_penyiasat.ketua||'';
+    document.getElementById('agih-setiausaha').value = c.pasukan_penyiasat.setiausaha||'';
+    document.getElementById('agih-ahli').value       = c.pasukan_penyiasat.ahli||'';
+  } else if(c.pegawai && c.pegawai!=='—'){
+    document.getElementById('agih-ketua').value = c.pegawai;
+  }
+
   const priSel = document.getElementById('agih-keutamaan');
   if(priSel) priSel.value = c.keutamaan;
-  document.getElementById('agih-beban-info').style.display='none';
+  const agihBeban = document.getElementById('agih-beban-info');
+  if(agihBeban) agihBeban.style.display='none';
   openModal('modal-agih');
 }
 
@@ -2550,12 +2565,18 @@ function agihSave() {
     ketua, setiausaha,
     ahli: document.getElementById('agih-ahli').value || ''
   };
-  c.pegawai = setiausaha;
-  if(c.status==='Baharu') c.status='Dalam Semakan';
+  c.pegawai = ketua;
+  if(c.status==='Baharu'||c.status==='Dalam Semakan') c.status='Dalam Siasatan';
   closeModal('modal-agih');
-  alert(`✅ Pasukan penyiasat berjaya diagihkan!\n\nKetua: ${ketua}\nSetiausaha: ${setiausaha}\nStatus: ${c.status}\n\nMemo penugasan akan dijana secara automatik.`);
+  updateAdminBadges();
   filterComplaints();
   renderCompStatChips();
+  renderDashboard();
+  // Refresh pegawai view jika ia sudah dipaparkan
+  renderPDashboard();
+  const pgwKes = document.getElementById('pgw-kes-content');
+  if(pgwKes) renderPKes();
+  alert(`✅ Pasukan penyiasat berjaya diagihkan!\n\nKetua: ${ketua}\nSetiausaha: ${setiausaha}\nStatus: Dalam Siasatan\n\nAduan kini muncul dalam paparan penyiasat yang diagihkan.`);
 }
 
 // ── Quick Status Update ──
@@ -3863,4 +3884,16 @@ renderDashboard();
 renderComplaintsTable();
 renderCompStatChips();
 updateAdminBadges();
+
+// Restore session on page refresh
+(function() {
+  const savedRole = sessionStorage.getItem('drole');
+  if (savedRole) {
+    const savedPgw  = sessionStorage.getItem('dpgw');
+    const savedAuth = sessionStorage.getItem('dgauth');
+    if (savedPgw) PGW_OFFICER = savedPgw;
+    if (savedAuth) { try { googleAuthUser = JSON.parse(savedAuth); } catch(e) {} }
+    selectRole(savedRole);
+  }
+})();
 </script>
