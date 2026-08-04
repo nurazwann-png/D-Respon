@@ -1011,7 +1011,6 @@ textarea.fc{min-height:80px;resize:vertical}
     <div class="modal-bdy" id="detail-body"></div>
     <div class="modal-ftr">
       <button class="btn btn-outline" onclick="closeModal('modal-detail')">Tutup</button>
-      <button class="btn btn-prim" id="detail-save-btn" onclick="saveSiasatan()" style="display:none">Kemaskini Status</button>
     </div>
   </div>
 </div>
@@ -3721,7 +3720,6 @@ function showDetail(id) {
     <div class="tab active" onclick="dtab(this,'dt-info')">Maklumat</div>
     <div class="tab" onclick="dtab(this,'dt-oyd')">OYD</div>
     <div class="tab" onclick="dtab(this,'dt-semak')">Senarai Semak</div>
-    <div class="tab" onclick="dtab(this,'dt-inv')">Siasatan</div>
     <div class="tab" onclick="dtab(this,'dt-log')">Audit Trail</div>
   </div>
   <div id="dt-info">
@@ -3816,59 +3814,6 @@ function showDetail(id) {
     }
   </div>
   <div id="dt-semak" style="display:none">${renderSemakChecklist(c.id, currentRole==='admin')}</div>
-  <div id="dt-inv" style="display:none">
-    ${currentRole==='admin'
-      ? `<div style="background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:16px">
-          <div style="font-size:10.5px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">📋 Laporan Kemajuan Siasatan (Pantauan Admin)</div>
-          <div class="form-row mb14">
-            <div><div class="flbl" style="font-weight:700">Status Semasa</div><div style="margin-top:4px">${statusBadge(c.status)}</div></div>
-            <div><div class="flbl" style="font-weight:700">Keputusan Siasatan</div>
-              <div style="font-weight:600;margin-top:4px">${c.keputusan||'<span style="color:var(--txm)">Belum ditentukan</span>'}</div>
-            </div>
-          </div>
-          <div class="fg mb14">
-            <div class="flbl" style="font-weight:700">Kemajuan (%)</div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
-              <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${c.kemajuan}%;background:${c.kemajuan===100?'#16A34A':c.kemajuan>=50?'#D97706':'#2563EB'}"></div></div>
-              <span style="font-weight:700;font-variant-numeric:tabular-nums">${c.kemajuan}%</span>
-            </div>
-          </div>
-          ${c.catatan_siasatan?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Catatan Siasatan</div>
-            <div style="background:var(--surf);border:1px solid var(--bd);border-radius:6px;padding:10px 12px;font-size:13px;margin-top:4px">${c.catatan_siasatan}</div>
-          </div>`:`<div style="color:var(--txm);font-size:12.5px;font-style:italic;margin-bottom:14px">Tiada catatan siasatan direkod setakat ini.</div>`}
-          ${c.lampiran&&c.lampiran.length?`<div class="fg"><div class="flbl" style="font-weight:700">Bukti / Lampiran</div>
-            <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">
-              ${c.lampiran.map(f=>`<span style="background:var(--surf);border:1px solid var(--bd);border-radius:5px;padding:4px 10px;font-size:12px">📎 ${f}</span>`).join('')}
-            </div>
-          </div>`:''}
-        </div>`
-      : `<div class="fg mb14">
-          <label class="flbl">Kemaskini Status</label>
-          <select class="fc" style="max-width:260px" id="inv-status-sel">
-            <option>${c.status}</option>
-            ${['Baharu','Dalam Semakan','Dalam Siasatan','Menunggu Maklum Balas','Selesai','Ditutup'].filter(s=>s!==c.status).map(s=>`<option>${s}</option>`).join('')}
-          </select>
-        </div>
-        <div class="fg mb14">
-          <label class="flbl">Kemajuan (%)</label>
-          <input type="range" min="0" max="100" value="${c.kemajuan}" style="width:100%" id="inv-kemajuan-range" oninput="this.nextElementSibling.textContent=this.value+'%'">
-          <span style="font-size:12px;color:var(--txm)">${c.kemajuan}%</span>
-        </div>
-        <div class="fg mb14"><label class="flbl">Catatan Siasatan</label><textarea class="fc" rows="3" id="inv-catatan" placeholder="Tambah catatan siasatan, dapatan, atau keterangan temu bual…">${c.catatan_siasatan||''}</textarea></div>
-        ${c.lampiran&&c.lampiran.length?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Lampiran Sedia Ada</div>
-          <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">
-            ${c.lampiran.map(f=>`<span style="background:var(--surf2);border:1px solid var(--bd);border-radius:5px;padding:4px 10px;font-size:12px">📄 ${f}</span>`).join('')}
-          </div>
-        </div>`:''}
-        <div class="fg">
-          <label class="flbl">Keputusan Siasatan</label>
-          <select class="fc" style="max-width:260px" id="inv-keputusan-sel">
-            <option value="">-- Belum Ditentukan --</option>
-            ${['Aduan Berasas','Aduan Tidak Berasas','Sebahagian Berasas'].map(o=>`<option${c.keputusan===o?' selected':''}>${o}</option>`).join('')}
-          </select>
-        </div>`
-    }
-  </div>
   <div id="dt-log" style="display:none">
     <div class="timeline">
       <div class="tl-item"><div class="tl-time">${c.tarikh}, 09:00 pagi</div><div class="tl-ttl">Aduan Diterima</div><div class="tl-desc">Aduan diterima melalui ${c.saluran} dan nombor rujukan ${c.id} dijana secara automatik</div></div>
@@ -3878,32 +3823,9 @@ function showDetail(id) {
       ${c.kemajuan===100?`<div class="tl-item" style="margin-bottom:0"><div class="tl-time">+${c.elapsed} hari</div><div class="tl-ttl">Siasatan Selesai</div><div class="tl-desc">Laporan eksekutif dijana dan dikemukakan kepada pengurusan PPD</div></div>`:''}
     </div>
   </div>`;
-  const saveBtn = document.getElementById('detail-save-btn');
-  if (saveBtn) saveBtn.style.display = currentRole === 'pegawai' ? '' : 'none';
   openModal('modal-detail');
 }
 
-function saveSiasatan() {
-  const titleEl = document.getElementById('detail-title');
-  const id = titleEl ? titleEl.textContent.replace('Butiran Aduan — ','').trim() : '';
-  const c = COMPLAINTS.find(x=>x.id===id);
-  if(!c) return;
-  const statusSel = document.getElementById('inv-status-sel');
-  const kemajuanEl = document.getElementById('inv-kemajuan-range');
-  const catatanEl = document.getElementById('inv-catatan');
-  const keputusanSel = document.getElementById('inv-keputusan-sel');
-  if(statusSel) c.status = statusSel.value;
-  if(kemajuanEl) c.kemajuan = parseInt(kemajuanEl.value);
-  if(catatanEl) c.catatan_siasatan = catatanEl.value.trim();
-  if(keputusanSel) c.keputusan = keputusanSel.value;
-  c.tarikh_kemaskini = new Date().toISOString().slice(0,10);
-  closeModal('modal-detail');
-  updateAdminBadges();
-  renderPKes();
-  renderPDashboard();
-  renderDashboard();
-  filterComplaints();
-}
 
 function revealSulit(id) {
   const c = COMPLAINTS.find(x=>x.id===id);
@@ -3922,7 +3844,7 @@ function revealSulit(id) {
 function dtab(el, target) {
   document.querySelectorAll('#detail-body .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['dt-info','dt-oyd','dt-semak','dt-inv','dt-log'].forEach(id=>{
+  ['dt-info','dt-oyd','dt-semak','dt-log'].forEach(id=>{
     const d=document.getElementById(id);
     if(d) d.style.display=id===target?'':'none';
   });
