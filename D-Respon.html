@@ -3266,16 +3266,17 @@ const PERMISSION_MATRIX = [
 ];
 const PERM_COLS = ['Dashboard','Tambah Aduan','Lihat Aduan','Log Kerja','Laporan','Analitik','Sulit'];
 
-let editingUserNama = null;
+let editingUserIdx = null;
 
-function openUserModal(nama) {
-  editingUserNama = nama || null;
+function openUserModal(idx) {
+  editingUserIdx = (idx !== undefined && idx !== null) ? idx : null;
   const overlay = document.getElementById('user-modal-overlay');
   overlay.style.display = 'flex';
-  document.getElementById('user-modal-title').textContent = nama ? 'Edit Pengguna' : 'Tambah Pengguna Baharu';
-  document.getElementById('um-save-btn').textContent = nama ? '💾 Kemaskini' : '💾 Simpan';
-  if (nama) {
-    const u = USERS.find(x => x.nama === nama);
+  const isEdit = editingUserIdx !== null;
+  document.getElementById('user-modal-title').textContent = isEdit ? 'Edit Pengguna' : 'Tambah Pengguna Baharu';
+  document.getElementById('um-save-btn').textContent = isEdit ? '💾 Kemaskini' : '💾 Simpan';
+  if (isEdit) {
+    const u = USERS[editingUserIdx];
     if (u) {
       document.getElementById('um-nama').value    = u.nama;
       document.getElementById('um-jawatan').value = u.jawatan;
@@ -3291,7 +3292,7 @@ function openUserModal(nama) {
 
 function closeUserModal() {
   document.getElementById('user-modal-overlay').style.display = 'none';
-  editingUserNama = null;
+  editingUserIdx = null;
 }
 
 function simpanPengguna() {
@@ -3305,9 +3306,8 @@ function simpanPengguna() {
     return;
   }
   const today = new Date().toISOString().slice(0,10);
-  if (editingUserNama) {
-    const idx = USERS.findIndex(u => u.nama === editingUserNama);
-    if (idx !== -1) USERS[idx] = {...USERS[idx], nama, jawatan, unit, emel, peranan};
+  if (editingUserIdx !== null) {
+    if (editingUserIdx >= 0 && editingUserIdx < USERS.length) USERS[editingUserIdx] = {...USERS[editingUserIdx], nama, jawatan, unit, emel, peranan};
   } else {
     if (USERS.find(u => u.nama === nama)) { alert('Pengguna dengan nama ini sudah wujud.'); return; }
     USERS.push({nama, jawatan, unit, peranan, status:'Aktif', terakhir: today, emel});
@@ -3316,16 +3316,11 @@ function simpanPengguna() {
   renderUsers();
 }
 
-function resetKataLaluan(nama) {
-  if (confirm(`Set semula kata laluan untuk ${nama}?\n\nKata laluan sementara akan dihantar ke e-mel pengguna.`)) {
-    alert(`✅ Kata laluan ${nama} telah ditetapkan semula.\nPautan set semula dihantar ke e-mel berdaftar.`);
-  }
-}
-
-function padamPengguna(nama) {
-  if (confirm(`Padam pengguna "${nama}" daripada sistem?\n\nTindakan ini tidak boleh dibatalkan.`)) {
-    const idx = USERS.findIndex(u => u.nama === nama);
-    if (idx !== -1) USERS.splice(idx, 1);
+function padamPengguna(idx) {
+  const u = USERS[idx];
+  if (!u) return;
+  if (confirm(`Padam pengguna "${u.nama}" daripada sistem?\n\nTindakan ini tidak boleh dibatalkan.`)) {
+    USERS.splice(idx, 1);
     renderUsers();
   }
 }
@@ -3374,9 +3369,8 @@ function renderUsers() {
             <td><span class="badge b-resolved"><span class="bdot"></span>Aktif</span></td>
             <td>
               <div style="display:flex;gap:4px">
-                <button class="btn btn-ghost btn-sm" title="Edit" onclick="openUserModal('${u.nama}')">✏️</button>
-                <button class="btn btn-ghost btn-sm" title="Set semula kata laluan" onclick="resetKataLaluan('${u.nama}')">🔑</button>
-                <button class="btn btn-ghost btn-sm" style="color:#DC2626" title="Padam" onclick="padamPengguna('${u.nama}')">🗑️</button>
+                <button class="btn btn-ghost btn-sm" title="Edit" onclick="openUserModal(${USERS.indexOf(u)})">✏️</button>
+                <button class="btn btn-ghost btn-sm" style="color:#DC2626" title="Padam" onclick="padamPengguna(${USERS.indexOf(u)})">🗑️</button>
               </div>
             </td>
           </tr>`;
