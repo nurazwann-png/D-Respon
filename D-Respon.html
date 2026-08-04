@@ -1353,7 +1353,7 @@ function renderPDashboard() {
       slaEl.innerHTML = overSLA.map(c=>`
         <div class="alert alert-danger" style="cursor:pointer" onclick="showDetail('${c.id}')">
           🔴 <strong>${c.id}</strong> — melebihi SLA ${c.elapsed - c.sla} hari<br>
-          <small>${c.sekolah} · ${c.kategori}</small>
+          <small>${c.oyd?.sekolah||'—'} · ${c.kategori}</small>
         </div>`).join('');
     }
     // Warn cases
@@ -1361,7 +1361,7 @@ function renderPDashboard() {
     warnCases.forEach(c => {
       slaEl.innerHTML += `<div class="alert alert-warn" style="cursor:pointer" onclick="showDetail('${c.id}')">
         ⚠️ <strong>${c.id}</strong> — baki ${c.sla - c.elapsed} hari sebelum tamat SLA<br>
-        <small>${c.sekolah} · ${c.kategori}</small>
+        <small>${c.oyd?.sekolah||'—'} · ${c.kategori}</small>
       </div>`;
     });
     if (overSLA.length === 0 && warnCases.length === 0) {
@@ -1404,7 +1404,7 @@ function renderPDashboard() {
     </tr></thead>
     <tbody>${myCases.map(c=>`<tr onclick="showDetail('${c.id}')">
       <td class="col-ref">${c.id}</td>
-      <td class="col-small">${c.sekolah}</td>
+      <td class="col-small">${c.oyd?.sekolah||'—'}</td>
       <td class="col-small">${c.kategori}</td>
       <td style="min-width:120px">
         <div style="display:flex;align-items:center;gap:6px">
@@ -1474,7 +1474,7 @@ function renderPLogKerja() {
           <label class="flbl">① No. Kes / Aduan <span>*</span></label>
           <select class="fc" id="lk-no-aduan" onchange="lkSelectCase(this)">
             <option value="">— Pilih No. Aduan —</option>
-            ${myCases.map(c=>`<option value="${c.id}">${c.id} · ${c.sekolah}</option>`).join('')}
+            ${myCases.map(c=>`<option value="${c.id}">${c.id} · ${c.oyd?.sekolah||'—'}</option>`).join('')}
           </select>
         </div>
         <div>
@@ -1664,7 +1664,7 @@ function lkSelectCase(sel) {
   if (!c) return;
   info.style.display='';
   info.innerHTML = `<div style="display:flex;gap:12px;flex-wrap:wrap">
-    <div><span style="color:var(--txm);font-size:11px">Sekolah</span><br><strong>${c.sekolah}</strong></div>
+    <div><span style="color:var(--txm);font-size:11px">Sekolah</span><br><strong>${c.oyd?.sekolah||'—'}</strong></div>
     <div><span style="color:var(--txm);font-size:11px">Kategori</span><br><strong>${c.kategori}</strong></div>
     <div><span style="color:var(--txm);font-size:11px">Status</span><br>${statusBadge(c.status)}</div>
     <div><span style="color:var(--txm);font-size:11px">Kemajuan</span><br><strong>${c.kemajuan}%</strong></div>
@@ -1789,6 +1789,14 @@ function lkSave() {
     status_kemaskini: document.getElementById('lk-status').value
   };
   LOG_KERJA.unshift(newLog);
+  // Sync kemajuan & status ke complaint
+  const comp = COMPLAINTS.find(x => x.id === kes.value);
+  if (comp) {
+    comp.kemajuan = newLog.kemajuan;
+    if (newLog.status_kemaskini && newLog.status_kemaskini !== comp.status) comp.status = newLog.status_kemaskini;
+    comp.tarikh_kemaskini = newLog.tarikh;
+  }
+  updateAdminBadges();
   alert(`✅ Log Kerja ${newId} berjaya disimpan!\nKes: ${kes.value}\nTarikh: ${newLog.tarikh}`);
   lkReset();
   lkFilterList(document.getElementById('lk-filter-kes'));
@@ -1811,7 +1819,7 @@ function renderPKronologi() {
             <label class="flbl">Pilih No. Kes / Aduan untuk Lihat Kronologi</label>
             <select class="fc" id="kron-select" onchange="kronSelectCase(this)">
               <option value="">— Pilih kes —</option>
-              ${myCases.map(c=>`<option value="${c.id}">${c.id} · ${c.sekolah} · ${c.kategori}</option>`).join('')}
+              ${myCases.map(c=>`<option value="${c.id}">${c.id} · ${c.oyd?.sekolah||'—'} · ${c.kategori}</option>`).join('')}
             </select>
           </div>
           <button class="btn btn-outline btn-sm" id="kron-print-btn" style="display:none" onclick="window.print()">🖨️ Cetak Kronologi</button>
@@ -1864,7 +1872,7 @@ function kronSelectCase(sel) {
       ${c.sulit?`<span style="background:#F5F3FF;color:#7C3AED;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid #C4B5FD;flex-shrink:0">🔒</span>`:''}
       <span style="flex-shrink:0">${priBadge(c.keutamaan)}</span>
       <span style="flex-shrink:0">${statusBadge(c.status)}</span>
-      <span style="font-size:12px;color:var(--txm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${c.sekolah} · ${c.kategori} · ${c.saluran} · ${c.tarikh}</span>
+      <span style="font-size:12px;color:var(--txm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${c.oyd?.sekolah||'—'} · ${c.kategori} · ${c.saluran} · ${c.tarikh}</span>
       <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;margin-left:8px">
         <div class="prog-bar" style="width:80px;height:6px"><div class="prog-fill" style="width:${c.kemajuan}%;background:${pClr}"></div></div>
         <span style="font-size:11.5px;font-weight:700;color:${pClr};min-width:28px">${c.kemajuan}%</span>
@@ -1995,7 +2003,7 @@ function renderPKes() {
       <tbody>${myCases.map(c=>`<tr onclick="showDetail('${c.id}')">
         <td class="col-ref">${c.id}</td>
         <td class="col-small">${c.tarikh}</td>
-        <td class="col-small">${c.sekolah}</td>
+        <td class="col-small">${c.oyd?.sekolah||'—'}</td>
         <td class="col-small">${c.kategori}</td>
         <td>${priBadge(c.keutamaan)}</td>
         <td style="min-width:130px">
@@ -2407,25 +2415,25 @@ function renderDashboard() {
       ...menungguAgih.map(c=>({
         icon:'⚡', color:'#D97706', bg:'#FFFBEB', border:'#FCD34D',
         text:`<strong>${c.id}</strong> menunggu agihan pegawai`,
-        sub:`${c.sekolah} · ${c.kategori} · ${priBadge(c.keutamaan)}`,
+        sub:`${c.oyd?.sekolah||'—'} · ${c.kategori} · ${priBadge(c.keutamaan)}`,
         action:`openAgih('${c.id}')`, actionLbl:'Agih Sekarang'
       })),
       ...overSLA.map(c=>({
         icon:'🔴', color:'#C8102E', bg:'#FFF1F2', border:'#FCA5A5',
         text:`<strong>${c.id}</strong> melebihi SLA sebanyak <strong style="color:#C8102E">${c.elapsed-c.sla} hari</strong>`,
-        sub:`${c.sekolah} · Pegawai: ${c.pegawai}`,
+        sub:`${c.oyd?.sekolah||'—'} · Pegawai: ${c.pegawai}`,
         action:`showDetail('${c.id}')`, actionLbl:'Lihat'
       })),
       ...kritikalBaharu.filter(c=>!menungguAgih.find(x=>x.id===c.id)).map(c=>({
         icon:'🚨', color:'#7C3AED', bg:'#F5F3FF', border:'#C4B5FD',
         text:`<strong>${c.id}</strong> — Aduan Kritikal belum diproses`,
-        sub:`${c.sekolah} · ${c.kategori}`,
+        sub:`${c.oyd?.sekolah||'—'} · ${c.kategori}`,
         action:`showDetail('${c.id}')`, actionLbl:'Proses'
       })),
       ...sulitBaharu.filter(c=>!menungguAgih.find(x=>x.id===c.id)&&!kritikalBaharu.find(x=>x.id===c.id)).map(c=>({
         icon:'🔒', color:'#6D28D9', bg:'#F5F3FF', border:'#C4B5FD',
         text:`<strong>${c.id}</strong> — Aduan Sulit baharu diterima`,
-        sub:`${c.sekolah} · ${c.kategori}`,
+        sub:`${c.oyd?.sekolah||'—'} · ${c.kategori}`,
         action:`showDetail('${c.id}')`, actionLbl:'Semak'
       })),
     ];
@@ -2478,7 +2486,7 @@ function renderDashboard() {
       <th>No. Rujukan</th><th>Sekolah</th><th>Kategori</th><th>Keutamaan</th><th>Pegawai</th><th>Status</th><th>SLA</th>
     </tr></thead><tbody>${COMPLAINTS.slice(0,6).map(c=>`<tr onclick="showDetail('${c.id}')">
       <td><div class="col-ref">${c.id}</div>${c.sulit?`<span style="font-size:10px;color:#7C3AED;font-weight:600">🔒 Sulit</span>`:''}</td>
-      <td class="col-small">${c.sekolah}</td>
+      <td class="col-small">${c.oyd?.sekolah||'—'}</td>
       <td class="col-small">${c.kategori}</td>
       <td>${priBadge(c.keutamaan)}</td>
       <td class="col-small">${maskPengadu(c)!==c.pengadu?'🔒 —':c.pegawai}</td>
@@ -2538,7 +2546,7 @@ function filterComplaints() {
     if (currentCompTab==='sulit'   && !c.sulit) return false;
     if (currentCompTab==='selesai' && c.status!=='Selesai'&&c.status!=='Ditutup') return false;
     // Text + dropdown filters
-    if(q && !`${c.id}${c.pengadu}${c.sekolah}${c.ringkasan}${c.kategori}`.toLowerCase().includes(q)) return false;
+    if(q && !`${c.id}${c.pengadu}${c.oyd?.sekolah||'—'}${c.ringkasan}${c.kategori}`.toLowerCase().includes(q)) return false;
     if(st && c.status!==st) return false;
     if(kt && c.kategori!==kt) return false;
     if(pr && c.keutamaan!==pr) return false;
@@ -2575,7 +2583,7 @@ function renderComplaintsTable() {
       <td class="col-small">${c.tarikh}</td>
       <td style="font-size:12.5px">${maskPengadu(c)}</td>
       <td>
-        <div style="font-size:12.5px;font-weight:600;color:var(--tx)">${c.sekolah}</div>
+        <div style="font-size:12.5px;font-weight:600;color:var(--tx)">${c.oyd?.sekolah||'—'}</div>
         <div style="font-size:11px;color:var(--txm)">${c.kategori}</div>
       </td>
       <td>${priBadge(c.keutamaan)}</td>
@@ -2702,7 +2710,7 @@ function renderInvestigation() {
             ${priBadge(c.keutamaan)}
           </div>
           <div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px">${c.ringkasan}</div>
-          <div style="font-size:11.5px;color:var(--txm);margin-bottom:8px">${c.sekolah} &nbsp;·&nbsp; ${c.pegawai}</div>
+          <div style="font-size:11.5px;color:var(--txm);margin-bottom:8px">${c.oyd?.sekolah||'—'} &nbsp;·&nbsp; ${c.pegawai}</div>
           <div style="display:flex;align-items:center;gap:8px">
             <div class="prog-bar" style="flex:1"><div class="prog-fill" style="width:${c.kemajuan}%;background:${c.kemajuan===100?'#15803D':c.kemajuan>60?'#2563EB':'#D97706'}"></div></div>
             <span style="font-size:11px;font-weight:600;color:var(--txm)">${c.kemajuan}%</span>
@@ -2779,7 +2787,7 @@ function renderSLA() {
         <thead><tr><th>No. Rujukan</th><th>Sekolah</th><th>Kategori</th><th>SLA</th><th>Hari Berlalu</th><th>Status</th></tr></thead>
         <tbody>${over.map(c=>`<tr onclick="showDetail('${c.id}')">
           <td class="col-ref">${c.id}</td>
-          <td class="col-small">${c.sekolah}</td>
+          <td class="col-small">${c.oyd?.sekolah||'—'}</td>
           <td class="col-small">${c.kategori}</td>
           <td class="col-small">${c.sla} hari</td>
           <td><span style="color:#DC2626;font-weight:700;font-size:13px">${c.elapsed} hari</span></td>
@@ -2830,7 +2838,7 @@ function renderAnalytics() {
 
   // School stats from COMPLAINTS
   const schoolCount = {};
-  COMPLAINTS.forEach(c=>{ schoolCount[c.sekolah]=(schoolCount[c.sekolah]||0)+1; });
+  COMPLAINTS.forEach(c=>{ schoolCount[c.oyd?.sekolah||'—']=(schoolCount[c.oyd?.sekolah||'—']||0)+1; });
   const schoolEntries = Object.entries(schoolCount).sort((a,b)=>b[1]-a[1]).slice(0,7);
   const schoolNames = schoolEntries.map(e=>e[0]);
   const schoolData  = schoolEntries.map(e=>e[1]);
@@ -2839,7 +2847,7 @@ function renderAnalytics() {
   // Recurring schools: same school+category appearing >=2 times
   const skolahKat = {};
   COMPLAINTS.forEach(c=>{
-    const k = c.sekolah+'||'+c.kategori;
+    const k = c.oyd?.sekolah||'—'+'||'+c.kategori;
     skolahKat[k]=(skolahKat[k]||0)+1;
   });
   const recurringSchools = Object.entries(skolahKat)
@@ -3251,7 +3259,7 @@ function previewReport() {
         ['Gred', oyd.gred||'—'],
         ['Tarikh Lantikan', oyd.tarikh_lantik||'—'],
         ['Rekod Disiplin', oyd.rekod_disiplin||'Tiada'],
-        ['Institusi', c.sekolah],
+        ['Institusi', c.oyd?.sekolah||'—'],
       ].map(([k,v])=>`<tr>
         <td style="padding:5px 10px;background:#F8FAFC;border:1px solid #E2E8F0;font-weight:600;color:#475569;width:40%">${k}</td>
         <td style="padding:5px 10px;border:1px solid #E2E8F0;color:#0F172A">${v}</td>
@@ -3264,7 +3272,7 @@ function previewReport() {
     <div style="background:#1B3A6B;color:#fff;padding:6px 12px;border-radius:5px;font-size:12px;font-weight:700;margin-bottom:10px">3. MAKLUMAT INSTITUSI</div>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px">
       ${[
-        ['Nama Sekolah / Institusi', c.sekolah],
+        ['Nama Sekolah / Institusi', c.oyd?.sekolah||'—'],
         ['Daerah', 'Dalat (Y101)'],
         ['Negeri', 'Sarawak'],
         ['Pasukan Penyiasat — Ketua', pt.ketua||'—'],
@@ -3584,7 +3592,7 @@ function renderUsers() {
                   </td>
                   <td class="col-small">${c.telefon||'—'}</td>
                   <td class="col-small">${c.emel||'—'}</td>
-                  <td class="col-small">${c.sekolah}</td>
+                  <td class="col-small">${c.oyd?.sekolah||'—'}</td>
                   <td class="col-small">${c.kategori}</td>
                   <td>${statusBadge(c.status)}</td>
                 </tr>`).join('')}</tbody>
@@ -3743,7 +3751,7 @@ function showDetail(id) {
           }
         </div>
       </div>
-      <div><div class="flbl" style="font-weight:700">Sekolah</div><div>${c.sekolah}</div></div>
+      <div><div class="flbl" style="font-weight:700">Sekolah</div><div>${c.oyd?.sekolah||'—'}</div></div>
     </div>
     <div class="fg mb14"><div class="flbl" style="font-weight:700">Ringkasan</div><div style="background:var(--surf2);padding:10px;border-radius:6px;border:1px solid var(--bd);font-size:13px">${c.ringkasan}</div></div>
     ${c.keterangan?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Keterangan Terperinci</div><div style="background:var(--surf2);padding:10px;border-radius:6px;border:1px solid var(--bd);font-size:13px">${c.keterangan}</div></div>`:''}
@@ -3781,18 +3789,19 @@ function showDetail(id) {
       :`<div style="background:var(--surf2);border:1px solid var(--bd);border-radius:8px;padding:16px">
           <div style="font-size:10.5px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Maklumat Orang Yang Diadu (OYD)</div>
           <div class="form-row mb14">
-            <div><div class="flbl" style="font-weight:700">Nama Penuh</div><div style="font-weight:600">${c.oyd.nama}</div></div>
-            <div><div class="flbl" style="font-weight:700">No. Kad Pengenalan</div><div style="font-family:monospace">${c.oyd.ic||'—'}</div></div>
+            <div><div class="flbl" style="font-weight:700">Nama Penuh</div><div style="font-weight:600">${c.oyd.nama||'—'}</div></div>
+            <div><div class="flbl" style="font-weight:700">No. KP / ID Pekerja</div><div style="font-family:monospace">${c.oyd.kp||'—'}</div></div>
           </div>
           <div class="form-row mb14">
-            <div><div class="flbl" style="font-weight:700">Jawatan</div><div>${c.oyd.jawatan}</div></div>
-            <div><div class="flbl" style="font-weight:700">Gred</div><div>${c.oyd.gred}</div></div>
+            <div><div class="flbl" style="font-weight:700">Jawatan</div><div>${c.oyd.jawatan||'—'}</div></div>
+            <div><div class="flbl" style="font-weight:700">Mata Pelajaran / Bidang</div><div>${c.oyd.matpel||'—'}</div></div>
           </div>
           <div class="form-row mb14">
-            <div><div class="flbl" style="font-weight:700">Tarikh Lantikan</div><div>${c.oyd.tarikh_lantik||'—'}</div></div>
-            <div><div class="flbl" style="font-weight:700">Rekod Disiplin</div>
-              <div style="color:${c.oyd.rekod_disiplin&&c.oyd.rekod_disiplin!=='Tiada'?'#DC2626':'#15803D'};font-weight:600">${c.oyd.rekod_disiplin||'Tiada'}</div>
-            </div>
+            <div><div class="flbl" style="font-weight:700">Sekolah / Institusi OYD</div><div>${c.oyd.sekolah||'—'}</div></div>
+            <div><div class="flbl" style="font-weight:700">No. Telefon OYD</div><div>${c.oyd.tel||'—'}</div></div>
+          </div>
+          <div class="form-row mb14">
+            <div><div class="flbl" style="font-weight:700">Hubungan dengan Pengadu</div><div>${c.oyd.hubungan||'—'}</div></div>
           </div>
           ${c.pasukan_penyiasat&&c.pasukan_penyiasat.ketua?`
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)">
@@ -3846,9 +3855,6 @@ function showDetail(id) {
           <span style="font-size:12px;color:var(--txm)">${c.kemajuan}%</span>
         </div>
         <div class="fg mb14"><label class="flbl">Catatan Siasatan</label><textarea class="fc" rows="3" id="inv-catatan" placeholder="Tambah catatan siasatan, dapatan, atau keterangan temu bual…">${c.catatan_siasatan||''}</textarea></div>
-        <div class="fg mb14"><label class="flbl">Muat Naik Bukti</label>
-          <div style="border:2px dashed var(--bds);border-radius:8px;padding:14px;text-align:center;color:var(--txm);font-size:12px;cursor:pointer">📎 Klik untuk muat naik dokumen atau gambar bukti</div>
-        </div>
         ${c.lampiran&&c.lampiran.length?`<div class="fg mb14"><div class="flbl" style="font-weight:700">Lampiran Sedia Ada</div>
           <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">
             ${c.lampiran.map(f=>`<span style="background:var(--surf2);border:1px solid var(--bd);border-radius:5px;padding:4px 10px;font-size:12px">📄 ${f}</span>`).join('')}
@@ -3971,7 +3977,7 @@ function renderPSemak() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
         <div>
           <div style="font-weight:700;font-size:13px">${c.id}</div>
-          <div style="font-size:11.5px;color:var(--txm);margin-top:2px">${c.sekolah} · ${c.kategori}</div>
+          <div style="font-size:11.5px;color:var(--txm);margin-top:2px">${c.oyd?.sekolah||'—'} · ${c.kategori}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-weight:700;color:${pct===100?'#15803D':pct>=50?'#D97706':'#DC2626'}">${pct}%</div>
