@@ -421,12 +421,12 @@ textarea.fc{min-height:80px;resize:vertical}
       <div class="nav-item" data-v="complaints" onclick="go('complaints',this)">
         <svg class="nav-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
         Pengurusan Aduan
-        <span class="nav-badge">18</span>
+        <span class="nav-badge" id="badge-complaints">0</span>
       </div>
       <div class="nav-item" data-v="investigation" onclick="go('investigation',this)">
         <svg class="nav-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M9 9a2 2 0 114 0 2 2 0 01-4 0z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a4 4 0 00-3.446 6.032l-2.261 2.26a1 1 0 101.414 1.415l2.261-2.261A4 4 0 1011 5z" clip-rule="evenodd"/></svg>
         Siasatan
-        <span class="nav-badge">45</span>
+        <span class="nav-badge" id="badge-siasatan">0</span>
       </div>
     </div>
 
@@ -435,7 +435,7 @@ textarea.fc{min-height:80px;resize:vertical}
       <div class="nav-item" data-v="sla" onclick="go('sla',this)">
         <svg class="nav-ico" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
         SLA &amp; Tempoh
-        <span class="nav-badge warn">7</span>
+        <span class="nav-badge warn" id="badge-sla">0</span>
       </div>
       <div class="nav-item" data-v="analytics" onclick="go('analytics',this)">
         <svg class="nav-ico" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
@@ -575,23 +575,11 @@ textarea.fc{min-height:80px;resize:vertical}
           </div>
           <div class="card">
             <div class="card-hdr"><div class="card-ttl">Ringkasan SLA</div></div>
-            <div class="card-bdy" style="padding:12px 16px">
-              <div class="stat-row">
-                <span class="srl">Dalam tempoh SLA</span>
-                <span class="srv" style="color:#15803D">✅ 8 aduan</span>
-              </div>
-              <div class="stat-row">
-                <span class="srl">Hampir tamat SLA (&lt;48 jam)</span>
-                <span class="srv" style="color:#D97706">⚠️ 4 aduan</span>
-              </div>
-              <div class="stat-row">
-                <span class="srl">Melebihi SLA</span>
-                <span class="srv" style="color:#C8102E">🔴 7 aduan</span>
-              </div>
-              <div class="stat-row" style="border:none">
-                <span class="srl">Purata penyelesaian</span>
-                <span class="srv">8.3 hari</span>
-              </div>
+            <div class="card-bdy" style="padding:12px 16px" id="dash-sla-ringkasan">
+              <div class="stat-row"><span class="srl">Dalam tempoh SLA</span><span class="srv" style="color:#15803D" id="sla-r-ok">—</span></div>
+              <div class="stat-row"><span class="srl">Hampir tamat SLA (&lt;48 jam)</span><span class="srv" style="color:#D97706" id="sla-r-warn">—</span></div>
+              <div class="stat-row"><span class="srl">Melebihi SLA</span><span class="srv" style="color:#C8102E" id="sla-r-over">—</span></div>
+              <div class="stat-row" style="border:none"><span class="srl">Purata penyelesaian</span><span class="srv" id="sla-r-avg">—</span></div>
             </div>
           </div>
         </div>
@@ -1998,8 +1986,33 @@ function renderPTambah() {
           <select class="fc"><option>Rendah</option><option>Sederhana</option><option>Tinggi</option><option>Kritikal</option></select>
         </div>
       </div>
-      <div class="fg mb14"><label class="flbl">Ringkasan Aduan <span>*</span></label><input type="text" class="fc" placeholder="Ringkasan ringkas aduan"></div>
-      <div class="fg mb14"><label class="flbl">Keterangan Terperinci <span>*</span></label><textarea class="fc" rows="4" placeholder="Huraikan aduan secara terperinci…"></textarea></div>
+      <div class="fg mb14"><label class="flbl">Ringkasan Aduan <span>*</span></label><input type="text" class="fc" id="ta-ringkasan" placeholder="Ringkasan ringkas aduan"></div>
+      <div class="fg mb14"><label class="flbl">Keterangan Terperinci <span>*</span></label><textarea class="fc" id="ta-keterangan" rows="4" placeholder="Huraikan aduan secara terperinci…"></textarea></div>
+      <div class="mb14" style="background:var(--surf2);border:1px solid var(--bd);border-radius:10px;padding:14px 16px">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:12px">👤 Maklumat OYD (Orang Yang Diadukan)</div>
+        <div class="form-row mb10">
+          <div class="fg"><label class="flbl">Nama OYD <span>*</span></label><input type="text" class="fc" id="ta-oyd-nama" placeholder="Nama penuh OYD"></div>
+          <div class="fg"><label class="flbl">No. KP / ID Pekerja</label><input type="text" class="fc" id="ta-oyd-kp" placeholder="Cth: 800101-01-1234"></div>
+        </div>
+        <div class="form-row mb10">
+          <div class="fg"><label class="flbl">Jawatan OYD <span>*</span></label><input type="text" class="fc" id="ta-oyd-jawatan" placeholder="Cth: Guru Matematik, Pengetua"></div>
+          <div class="fg"><label class="flbl">Mata Pelajaran / Bidang</label><input type="text" class="fc" id="ta-oyd-matpel" placeholder="Cth: Matematik, Pentadbiran"></div>
+        </div>
+        <div class="form-row mb10">
+          <div class="fg"><label class="flbl">Sekolah OYD</label><input type="text" class="fc" id="ta-oyd-sekolah" placeholder="Nama sekolah OYD (jika berbeza)"></div>
+          <div class="fg"><label class="flbl">No. Telefon OYD</label><input type="text" class="fc" id="ta-oyd-tel" placeholder="Nombor hubungan OYD"></div>
+        </div>
+        <div class="fg"><label class="flbl">Hubungan OYD dengan Pengadu</label>
+          <select class="fc" id="ta-oyd-hubungan">
+            <option value="">-- Pilih --</option>
+            <option>Guru Pengadu</option>
+            <option>Pengetua / GPK</option>
+            <option>Rakan Sekerja</option>
+            <option>Pihak Atasan</option>
+            <option>Lain-lain</option>
+          </select>
+        </div>
+      </div>
       <div class="fg mb14"><label class="flbl">Lampiran</label>
         <input type="file" id="tambah-lampiran-input" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none" onchange="tambahLampiranPreview(this)">
         <div id="tambah-lampiran-box" style="border:2px dashed var(--bds);border-radius:8px;padding:16px;text-align:center;color:var(--txm);font-size:13px;cursor:pointer" onclick="document.getElementById('tambah-lampiran-input').click()">📎 Klik untuk muat naik dokumen atau gambar bukti</div>
@@ -2040,17 +2053,27 @@ function tambahHapusLampiran(idx) {
 function simpanAduanBaharu() {
   const el = document.getElementById('pgw-tambah-content');
   if (!el) return;
-  const inputs = el.querySelectorAll('input[type=text], input[type=date], select, textarea');
-  const tarikh    = inputs[0].value;
-  const saluran   = inputs[1].value;
-  const sulit     = document.getElementById('sulit-toggle-p').checked;
-  const namaPengadu = inputs[2].value.trim();
-  const hubungan  = inputs[3].value.trim();
-  const sekolah   = inputs[4].value;
-  const kategori  = inputs[5].value;
-  const keutamaan = inputs[6].value;
-  const ringkasan = inputs[7].value.trim();
-  const keterangan = inputs[8].value.trim();
+
+  const tarikh     = el.querySelector('input[type=date]').value;
+  const saluran    = el.querySelectorAll('select')[0].value;
+  const sulit      = document.getElementById('sulit-toggle-p').checked;
+  const namaPengadu= el.querySelectorAll('input[type=text]')[0].value.trim();
+  const hubungan   = el.querySelectorAll('input[type=text]')[1].value.trim();
+  const sekolah    = el.querySelectorAll('select')[1].value;
+  const kategori   = el.querySelectorAll('select')[2].value;
+  const keutamaan  = el.querySelectorAll('select')[3].value;
+  const ringkasan  = (document.getElementById('ta-ringkasan')||{value:''}).value.trim() || el.querySelectorAll('input[type=text]')[2]?.value.trim() || '';
+  const keterangan = (document.getElementById('ta-keterangan')||{value:''}).value.trim() || el.querySelector('textarea')?.value.trim() || '';
+
+  const oyd = {
+    nama     : (document.getElementById('ta-oyd-nama')||{value:''}).value.trim(),
+    kp       : (document.getElementById('ta-oyd-kp')||{value:''}).value.trim(),
+    jawatan  : (document.getElementById('ta-oyd-jawatan')||{value:''}).value.trim(),
+    matpel   : (document.getElementById('ta-oyd-matpel')||{value:''}).value.trim(),
+    sekolah  : (document.getElementById('ta-oyd-sekolah')||{value:''}).value.trim(),
+    tel      : (document.getElementById('ta-oyd-tel')||{value:''}).value.trim(),
+    hubungan : (document.getElementById('ta-oyd-hubungan')||{value:''}).value,
+  };
 
   if (!tarikh || sekolah === '-- Pilih Sekolah --') {
     alert('Sila lengkapkan maklumat wajib: Tarikh, Sekolah, Kategori, dan Ringkasan Aduan.');
@@ -2058,6 +2081,10 @@ function simpanAduanBaharu() {
   }
   if (!ringkasan) {
     alert('Sila isi Ringkasan Aduan sebelum menyimpan.');
+    return;
+  }
+  if (!oyd.nama || !oyd.jawatan) {
+    alert('Sila isi sekurang-kurangnya Nama OYD dan Jawatan OYD.');
     return;
   }
 
@@ -2080,6 +2107,7 @@ function simpanAduanBaharu() {
     keutamaan,
     ringkasan,
     keterangan,
+    oyd,
     lampiran: tambahLampiranFiles.map(f => f.name),
     status: 'Baharu',
     kemajuan: 0,
@@ -2092,6 +2120,7 @@ function simpanAduanBaharu() {
 
   COMPLAINTS.push(newCase);
   tambahLampiranFiles = [];
+  updateAdminBadges();
 
   // Refresh dashboard dan kes
   const pgwDash = document.getElementById('pgw-dashboard-content');
@@ -2381,6 +2410,7 @@ function renderDashboard() {
       <td>${slaBadge(c)}</td>
     </tr>`).join('')}</tbody>`;
   }
+  updateAdminBadges();
 }
 
 // ══════════════════════════════════════
@@ -3800,6 +3830,32 @@ function renderPSemak() {
 // ══════════════════════════════════════
 // THEME
 // ══════════════════════════════════════
+function updateAdminBadges() {
+  const nBaharu   = COMPLAINTS.filter(c=>c.status==='Baharu').length;
+  const nSiasatan = COMPLAINTS.filter(c=>c.status==='Dalam Siasatan'||c.status==='Siasatan').length;
+  const nOverSLA  = COMPLAINTS.filter(c=>c.elapsed>c.sla&&c.status!=='Selesai'&&c.status!=='Ditutup').length;
+  const nWarn     = COMPLAINTS.filter(c=>c.elapsed<=c.sla&&c.elapsed>c.sla*.75&&c.status!=='Selesai'&&c.status!=='Ditutup').length;
+  const nOk       = COMPLAINTS.filter(c=>c.elapsed<=c.sla*.75||c.status==='Selesai'||c.status==='Ditutup').length;
+  const selesai   = COMPLAINTS.filter(c=>c.status==='Selesai'||c.status==='Ditutup');
+  const avgDays   = selesai.length ? (selesai.reduce((s,c)=>s+c.elapsed,0)/selesai.length).toFixed(1) : 0;
+
+  const bc = document.getElementById('badge-complaints');
+  const bs = document.getElementById('badge-siasatan');
+  const bw = document.getElementById('badge-sla');
+  if (bc) { bc.textContent=nBaharu; bc.style.display=nBaharu?'':'none'; }
+  if (bs) { bs.textContent=nSiasatan; bs.style.display=nSiasatan?'':'none'; }
+  if (bw) { bw.textContent=nOverSLA; bw.style.display=nOverSLA?'':'none'; }
+
+  const rok  = document.getElementById('sla-r-ok');
+  const rwarn= document.getElementById('sla-r-warn');
+  const rover= document.getElementById('sla-r-over');
+  const ravg = document.getElementById('sla-r-avg');
+  if (rok)   rok.textContent   = `✅ ${nOk} aduan`;
+  if (rwarn) rwarn.textContent = `⚠️ ${nWarn} aduan`;
+  if (rover) rover.textContent = `🔴 ${nOverSLA} aduan`;
+  if (ravg)  ravg.textContent  = `${avgDays} hari`;
+}
+
 function toggleTheme() {
   const r = document.documentElement;
   const cur = r.getAttribute('data-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -3812,4 +3868,5 @@ function toggleTheme() {
 renderDashboard();
 renderComplaintsTable();
 renderCompStatChips();
+updateAdminBadges();
 </script>
