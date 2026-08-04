@@ -335,6 +335,36 @@ textarea.fc{min-height:80px;resize:vertical}
 <!-- ══════════════════════════════════════
      GOOGLE OAUTH MODAL
      ══════════════════════════════════════ -->
+<!-- ── Modal Pengurusan Pengguna ── -->
+<div id="user-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,20,40,.75);backdrop-filter:blur(4px);z-index:9998;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border-radius:14px;padding:28px;width:480px;max-width:95vw;border:1px solid var(--bd);box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-size:16px;font-weight:700;color:var(--tx)" id="user-modal-title">Tambah Pengguna Baharu</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeUserModal()" style="font-size:18px;line-height:1">×</button>
+    </div>
+    <div style="display:grid;gap:12px">
+      <div class="fg"><label class="flbl">Nama Penuh <span>*</span></label><input type="text" id="um-nama" class="fc" placeholder="Nama penuh pengguna"></div>
+      <div class="form-row">
+        <div class="fg"><label class="flbl">Jawatan <span>*</span></label><input type="text" id="um-jawatan" class="fc" placeholder="Cth: Penolong Pengarah"></div>
+        <div class="fg"><label class="flbl">Unit <span>*</span></label><input type="text" id="um-unit" class="fc" placeholder="Cth: Unit Kurikulum"></div>
+      </div>
+      <div class="fg"><label class="flbl">E-mel <span>*</span></label><input type="email" id="um-emel" class="fc" placeholder="nama@ppd.edu.my"></div>
+      <div class="fg"><label class="flbl">Peranan Sistem <span>*</span></label>
+        <select id="um-peranan" class="fc">
+          <option>Pegawai Penyiasat</option>
+          <option>Pentadbir PPD</option>
+          <option>Pengurusan PPD</option>
+          <option>Super Admin</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-outline" onclick="closeUserModal()">Batal</button>
+      <button class="btn btn-prim" id="um-save-btn" onclick="simpanPengguna()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
 <div id="google-login-overlay" style="display:none;position:fixed;inset:0;background:rgba(11,20,40,.75);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:40px 36px;max-width:400px;width:92%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.35)">
 
@@ -1069,7 +1099,7 @@ const KPI = [
   {lbl:'Purata Penyelesaian',val:0,sub:'Hari per kes',clr:'#0891B2',ico:'📊',trend:'Hari'},
 ];
 
-const USERS = [
+let USERS = [
   {nama:'Ahmad Razif',      jawatan:'Super Admin',             unit:'ICT',         peranan:'Super Admin',        status:'Aktif',terakhir:'2026-07-24',emel:'ahmad.razif@ppd.edu.my'},
   {nama:'Nurazwan Ismail',  jawatan:'Penolong Pengarah',       unit:'Pentadbiran', peranan:'Pentadbir PPD',       status:'Aktif',terakhir:'2026-07-24',emel:'nurazwan@ppd.edu.my'},
   {nama:'Pn. Siti Rahimah', jawatan:'Penolong Pengarah',       unit:'Kurikulum',   peranan:'Pegawai Penyiasat',  status:'Aktif',terakhir:'2026-07-23',emel:'siti@ppd.edu.my'},
@@ -2598,17 +2628,18 @@ function renderInvestigation() {
 // ══════════════════════════════════════
 function renderSLA() {
   const el = document.getElementById('sla-content');
-  if(!el||el.dataset.rendered) return;
-  el.dataset.rendered=1;
-  const over = COMPLAINTS.filter(c=>c.elapsed>c.sla);
+  if(!el) return;
+  const over = COMPLAINTS.filter(c=>c.elapsed>c.sla&&c.status!=='Selesai'&&c.status!=='Ditutup');
   const warn = COMPLAINTS.filter(c=>c.elapsed<=c.sla && c.elapsed>c.sla*.75 && c.status!=='Selesai'&&c.status!=='Ditutup');
-  const ok = COMPLAINTS.filter(c=>c.elapsed<=c.sla*.75||c.status==='Selesai'||c.status==='Ditutup');
+  const ok   = COMPLAINTS.filter(c=>c.elapsed<=c.sla*.75||c.status==='Selesai'||c.status==='Ditutup');
+  const selesai = COMPLAINTS.filter(c=>c.status==='Selesai'||c.status==='Ditutup');
+  const avgDays = selesai.length ? (selesai.reduce((s,c)=>s+c.elapsed,0)/selesai.length).toFixed(1) : 0;
   el.innerHTML = `
   <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
     <div class="kpi" style="--kpi-clr:#15803D"><div class="kpi-lbl">Dalam Tempoh SLA</div><div class="kpi-val">${ok.length}</div><div class="kpi-foot">Pematuhan SLA</div></div>
     <div class="kpi" style="--kpi-clr:#D97706"><div class="kpi-lbl">Hampir Tamat SLA</div><div class="kpi-val">${warn.length}</div><div class="kpi-foot">Dalam 48 jam</div></div>
     <div class="kpi" style="--kpi-clr:#DC2626"><div class="kpi-lbl">Melebihi SLA</div><div class="kpi-val">${over.length}</div><div class="kpi-foot">Perlu tindakan segera</div></div>
-    <div class="kpi" style="--kpi-clr:#2563EB"><div class="kpi-lbl">Purata Penyelesaian</div><div class="kpi-val">8.3</div><div class="kpi-foot">Hari per kes</div></div>
+    <div class="kpi" style="--kpi-clr:#2563EB"><div class="kpi-lbl">Purata Penyelesaian</div><div class="kpi-val">${avgDays}</div><div class="kpi-foot">Hari per kes</div></div>
   </div>
 
   <div class="g2 mb20">
@@ -2643,7 +2674,7 @@ function renderSLA() {
   <div class="card">
     <div class="card-hdr"><div class="card-ttl">Prestasi SLA Mengikut Bulan (2026)</div></div>
     <div class="card-bdy">
-      ${miniBar([24,31,27,39,34,26,38],[...Array(7)].map((_,i)=>i<3?'#15803D':i<5?'#D97706':'#2563EB'),MONTHS_LBL.slice(0,7),140)}
+      ${miniBar(MONTHLY.slice(0,7),[...Array(7)].map(()=>'#2563EB'),MONTHS_LBL.slice(0,7),140)}
       <div class="legend" style="margin-top:8px">
         <div class="leg-item"><div class="leg-dot" style="background:#15803D"></div>Dalam SLA</div>
         <div class="leg-item"><div class="leg-dot" style="background:#D97706"></div>Hampir Tamat</div>
@@ -2658,8 +2689,7 @@ function renderSLA() {
 // ══════════════════════════════════════
 function renderAnalytics() {
   const el = document.getElementById('analytics-content');
-  if(!el||el.dataset.rendered) return;
-  el.dataset.rendered=1;
+  if(!el) return;
 
   const total    = COMPLAINTS.length;
   const selesai  = COMPLAINTS.filter(c=>c.status==='Selesai'||c.status==='Ditutup').length;
@@ -2668,22 +2698,35 @@ function renderAnalytics() {
   const sulitCnt = COMPLAINTS.filter(c=>c.sulit).length;
   const kadar    = Math.round((selesai/total)*100);
 
-  const schoolData  = [42,38,31,27,24,19,16];
-  const schoolNames = ['SK Taman Melati','SMK Wangsa Maju','SMK Keramat','SK Keramat','SK Setapak Jaya','SMK Taman Melati','SMK Setapak'];
+  // School stats from COMPLAINTS
+  const schoolCount = {};
+  COMPLAINTS.forEach(c=>{ schoolCount[c.sekolah]=(schoolCount[c.sekolah]||0)+1; });
+  const schoolEntries = Object.entries(schoolCount).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const schoolNames = schoolEntries.map(e=>e[0]);
+  const schoolData  = schoolEntries.map(e=>e[1]);
+  const maxSchool   = Math.max(...schoolData, 1);
 
-  const recurringSchools = [
-    {sekolah:'SMK Wangsa Maju', kat:'Buli', count:4, risk:'Tinggi'},
-    {sekolah:'SK Taman Melati',  kat:'Tatakelakuan Guru', count:3, risk:'Sederhana'},
-    {sekolah:'SMK Keramat',      kat:'Kewangan', count:3, risk:'Sederhana'},
-    {sekolah:'SK Keramat',       kat:'Infrastruktur', count:3, risk:'Sederhana'},
-  ];
+  // Recurring schools: same school+category appearing >=2 times
+  const skolahKat = {};
+  COMPLAINTS.forEach(c=>{
+    const k = c.sekolah+'||'+c.kategori;
+    skolahKat[k]=(skolahKat[k]||0)+1;
+  });
+  const recurringSchools = Object.entries(skolahKat)
+    .filter(([,v])=>v>=2).sort((a,b)=>b[1]-a[1]).slice(0,4)
+    .map(([k,v])=>{
+      const [sekolah,kat]=k.split('||');
+      return {sekolah,kat,count:v,risk:v>=4?'Tinggi':'Sederhana'};
+    });
 
-  const officerStats = [
-    {nama:'Pn. Siti Rahimah', unit:'Kurikulum', jumlah:8, selesai:5, overSla:1, avgDays:7.2},
-    {nama:'En. Kamarudin',    unit:'HEM',        jumlah:6, selesai:4, overSla:0, avgDays:9.1},
-    {nama:'En. Hasrul Nizam', unit:'Integriti',  jumlah:9, selesai:3, overSla:2, avgDays:11.4},
-    {nama:'Pn. Zalina',       unit:'Keselamatan',jumlah:5, selesai:4, overSla:0, avgDays:6.8},
-  ];
+  // Officer stats from COMPLAINTS
+  const officerStats = OFFICERS.map(o=>{
+    const kes = COMPLAINTS.filter(c=>c.pegawai===o.nama);
+    const sel = kes.filter(c=>c.status==='Selesai'||c.status==='Ditutup');
+    const ovr = kes.filter(c=>c.elapsed>c.sla&&c.status!=='Selesai'&&c.status!=='Ditutup');
+    const avg = sel.length ? (sel.reduce((s,c)=>s+c.elapsed,0)/sel.length).toFixed(1) : 0;
+    return {nama:o.nama, unit:o.unit.replace('Unit ',''), jumlah:kes.length, selesai:sel.length, overSla:ovr.length, avgDays:avg};
+  });
 
   el.innerHTML = `
   <!-- KPI row -->
@@ -2714,7 +2757,7 @@ function renderAnalytics() {
           <div><div class="card-ttl">Trend Aduan Bulanan 2026</div><div class="card-sub">Jan – Jul 2026</div></div>
         </div>
         <div class="card-bdy" style="padding:12px 16px">
-          ${barChart([28,35,31,44,38,29,42], MONTHS_LBL.slice(0,7), {color:'#2563EB'})}
+          ${barChart(MONTHLY.slice(0,7), MONTHS_LBL.slice(0,7), {color:'#2563EB'})}
         </div>
       </div>
       <div class="card">
@@ -2730,16 +2773,19 @@ function renderAnalytics() {
     <div class="card mb20">
       <div class="card-hdr"><div class="card-ttl">🔔 Penemuan & Cadangan Tindakan</div></div>
       <div class="card-bdy" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
-        ${[
-          {ico:'🔴',clr:'#FEF2F2',brd:'#FCA5A5',ttl:'Berisiko Tinggi',desc:'SMK Wangsa Maju mempunyai 4 kes buli dalam 2026. Cadang: intervensi segera dan program anti-buli.'},
-          {ico:'⚠️',clr:'#FFFBEB',brd:'#FCD34D',ttl:'SLA Terlepas',desc:'7 aduan telah melebihi tempoh SLA. Semakan semula beban pegawai diperlukan.'},
-          {ico:'📈',clr:'#EFF6FF',brd:'#BFDBFE',ttl:'Trend Meningkat',desc:'Aduan meningkat 45% dari Jan ke Jul 2026. Cadang: tambah kapasiti pegawai penyiasat.'},
-          {ico:'✅',clr:'#F0FDF4',brd:'#86EFAC',ttl:'Prestasi Baik',desc:'Kadar penyelesaian ${kadar}% — melebihi sasaran KPM sebanyak 80%.'},
-        ].map(i=>`<div style="padding:14px;background:${i.clr};border:1px solid ${i.brd};border-radius:10px">
-          <div style="font-size:20px;margin-bottom:6px">${i.ico}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:4px">${i.ttl}</div>
-          <div style="font-size:12px;color:var(--tx2);line-height:1.6">${i.desc}</div>
-        </div>`).join('')}
+        ${total===0
+          ? `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--txm);font-size:13px">Tiada aduan lagi. Penemuan akan dipaparkan selepas data dikumpul.</div>`
+          : [
+            overSLA>0 ? {ico:'⚠️',clr:'#FFFBEB',brd:'#FCD34D',ttl:'SLA Terlepas',desc:`${overSLA} aduan telah melebihi tempoh SLA. Semakan semula beban pegawai diperlukan.`} : null,
+            kadar>=80 ? {ico:'✅',clr:'#F0FDF4',brd:'#86EFAC',ttl:'Prestasi Baik',desc:`Kadar penyelesaian ${kadar}% — melebihi sasaran KPM sebanyak 80%.`} : null,
+            aktif>0   ? {ico:'🔍',clr:'#EFF6FF',brd:'#BFDBFE',ttl:'Kes Aktif',desc:`${aktif} aduan sedang dalam proses siasatan.`} : null,
+            sulitCnt>0? {ico:'🔒',clr:'#F5F3FF',brd:'#C4B5FD',ttl:'Aduan Sulit',desc:`${sulitCnt} aduan memerlukan perlindungan maklumat pengadu.`} : null,
+          ].filter(Boolean).map(i=>`<div style="padding:14px;background:${i.clr};border:1px solid ${i.brd};border-radius:10px">
+            <div style="font-size:20px;margin-bottom:6px">${i.ico}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:4px">${i.ttl}</div>
+            <div style="font-size:12px;color:var(--tx2);line-height:1.6">${i.desc}</div>
+          </div>`).join('') || `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--txm)">Tiada penemuan luar biasa — sistem berjalan dengan baik.</div>`
+        }
       </div>
     </div>
   </div>
@@ -2754,20 +2800,22 @@ function renderAnalytics() {
       <div class="card-bdy">
         ${schoolData.map((v,i)=>`
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer" onclick="go('complaints',null)" title="Tapis aduan ${schoolNames[i]}">
-          <div style="width:170px;font-size:12.5px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:${v>35?700:400}">${schoolNames[i]}</div>
+          <div style="width:170px;font-size:12.5px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:${v===maxSchool?700:400}">${schoolNames[i]}</div>
           <div style="flex:1;height:22px;background:var(--surf2);border-radius:5px;overflow:hidden;border:1px solid var(--bd)">
-            <div style="height:100%;width:${(v/42)*100}%;background:${v>35?'#C8102E':v>25?'#D97706':'#2563EB'};border-radius:5px;display:flex;align-items:center;padding-left:8px;transition:width .8s">
-              ${v>18?`<span style="font-size:10px;color:#fff;font-weight:700">${v}</span>`:''}
+            <div style="height:100%;width:${maxSchool>0?(v/maxSchool)*100:0}%;background:${v>=4?'#C8102E':v>=3?'#D97706':'#2563EB'};border-radius:5px;display:flex;align-items:center;padding-left:8px;transition:width .8s">
+              ${v>0?`<span style="font-size:10px;color:#fff;font-weight:700">${v}</span>`:''}
             </div>
           </div>
-          <div style="width:28px;font-size:13px;font-weight:800;color:${v>35?'#C8102E':v>25?'#D97706':'var(--tx)'};font-variant-numeric:tabular-nums">${v}</div>
-          <div style="width:80px"><span class="${v>35?'sla-over':v>25?'sla-warn':'sla-ok'}">${v>35?'⚠ Kritikal':v>25?'⚠ Tinggi':'✓ Terkawal'}</span></div>
+          <div style="width:28px;font-size:13px;font-weight:800;color:${v>=4?'#C8102E':v>=3?'#D97706':'var(--tx)'};font-variant-numeric:tabular-nums">${v}</div>
+          <div style="width:80px"><span class="${v>=4?'sla-over':v>=3?'sla-warn':'sla-ok'}">${v>=4?'⚠ Kritikal':v>=3?'⚠ Tinggi':'✓ Terkawal'}</span></div>
         </div>`).join('')}
       </div>
     </div>
     <div class="card">
       <div class="card-hdr"><div class="card-ttl">🔁 Aduan Berulang — Sekolah Berisiko</div><div class="card-sub">Sekolah dengan ≥3 aduan sejenis</div></div>
-      <div class="tbl-wrap"><table>
+      ${recurringSchools.length===0
+        ? `<div style="padding:20px;text-align:center;color:var(--txm);font-size:13px">Tiada aduan berulang dikesan setakat ini.</div>`
+        : `<div class="tbl-wrap"><table>
         <thead><tr><th>Sekolah</th><th>Kategori</th><th>Bilangan</th><th>Tahap Risiko</th><th>Cadangan</th></tr></thead>
         <tbody>${recurringSchools.map(r=>`<tr>
           <td style="font-weight:600;font-size:13px">${r.sekolah}</td>
@@ -2776,10 +2824,8 @@ function renderAnalytics() {
           <td><span class="${r.risk==='Tinggi'?'sla-over':'sla-warn'}">${r.risk}</span></td>
           <td style="font-size:12px;color:var(--tx2)">${r.risk==='Tinggi'?'Intervensi segera + program khusus':'Pemantauan berterusan diperlukan'}</td>
         </tr>`).join('')}</tbody>
-      </table></div>
-      <div style="padding:12px 16px;background:#FEF2F2;border-top:1px solid var(--bd);font-size:12px;color:#991B1B">
-        <strong>⚠ SMK Wangsa Maju</strong> dikenal pasti sebagai sekolah berisiko tinggi kes buli. Cadang laporan khas kepada JPN segera.
-      </div>
+      </table></div>`
+      }
     </div>
   </div>
 
@@ -3190,6 +3236,70 @@ const PERMISSION_MATRIX = [
 ];
 const PERM_COLS = ['Dashboard','Tambah Aduan','Lihat Aduan','Log Kerja','Laporan','Analitik','Sulit'];
 
+let editingUserNama = null;
+
+function openUserModal(nama) {
+  editingUserNama = nama || null;
+  const overlay = document.getElementById('user-modal-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('user-modal-title').textContent = nama ? 'Edit Pengguna' : 'Tambah Pengguna Baharu';
+  document.getElementById('um-save-btn').textContent = nama ? '💾 Kemaskini' : '💾 Simpan';
+  if (nama) {
+    const u = USERS.find(x => x.nama === nama);
+    if (u) {
+      document.getElementById('um-nama').value    = u.nama;
+      document.getElementById('um-jawatan').value = u.jawatan;
+      document.getElementById('um-unit').value    = u.unit;
+      document.getElementById('um-emel').value    = u.emel || '';
+      document.getElementById('um-peranan').value = u.peranan;
+    }
+  } else {
+    ['um-nama','um-jawatan','um-unit','um-emel'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('um-peranan').value = 'Pegawai Penyiasat';
+  }
+}
+
+function closeUserModal() {
+  document.getElementById('user-modal-overlay').style.display = 'none';
+  editingUserNama = null;
+}
+
+function simpanPengguna() {
+  const nama    = document.getElementById('um-nama').value.trim();
+  const jawatan = document.getElementById('um-jawatan').value.trim();
+  const unit    = document.getElementById('um-unit').value.trim();
+  const emel    = document.getElementById('um-emel').value.trim();
+  const peranan = document.getElementById('um-peranan').value;
+  if (!nama || !jawatan || !unit || !emel) {
+    alert('Sila lengkapkan semua medan wajib.');
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  if (editingUserNama) {
+    const idx = USERS.findIndex(u => u.nama === editingUserNama);
+    if (idx !== -1) USERS[idx] = {...USERS[idx], nama, jawatan, unit, emel, peranan};
+  } else {
+    if (USERS.find(u => u.nama === nama)) { alert('Pengguna dengan nama ini sudah wujud.'); return; }
+    USERS.push({nama, jawatan, unit, peranan, status:'Aktif', terakhir: today, emel});
+  }
+  closeUserModal();
+  renderUsers();
+}
+
+function resetKataLaluan(nama) {
+  if (confirm(`Set semula kata laluan untuk ${nama}?\n\nKata laluan sementara akan dihantar ke e-mel pengguna.`)) {
+    alert(`✅ Kata laluan ${nama} telah ditetapkan semula.\nPautan set semula dihantar ke e-mel berdaftar.`);
+  }
+}
+
+function padamPengguna(nama) {
+  if (confirm(`Padam pengguna "${nama}" daripada sistem?\n\nTindakan ini tidak boleh dibatalkan.`)) {
+    const idx = USERS.findIndex(u => u.nama === nama);
+    if (idx !== -1) USERS.splice(idx, 1);
+    renderUsers();
+  }
+}
+
 function renderUsers() {
   const el = document.getElementById('users-content');
   if(!el) return;
@@ -3209,7 +3319,7 @@ function renderUsers() {
     <div class="card mb20">
       <div class="card-hdr">
         <div><div class="card-ttl">Senarai Pengguna Sistem D-Respon</div><div class="card-sub">${USERS.length} pengguna berdaftar</div></div>
-        <button class="btn btn-prim btn-sm" onclick="alert('Borang tambah pengguna baharu')">+ Tambah Pengguna</button>
+        <button class="btn btn-prim btn-sm" onclick="openUserModal()">+ Tambah Pengguna</button>
       </div>
       <div class="tbl-wrap"><table>
         <thead><tr>
@@ -3234,8 +3344,9 @@ function renderUsers() {
             <td><span class="badge b-resolved"><span class="bdot"></span>Aktif</span></td>
             <td>
               <div style="display:flex;gap:4px">
-                <button class="btn btn-ghost btn-sm" onclick="alert('Edit: ${u.nama}')">✏️</button>
-                <button class="btn btn-ghost btn-sm" onclick="alert('Set semula kata laluan: ${u.nama}')">🔑</button>
+                <button class="btn btn-ghost btn-sm" title="Edit" onclick="openUserModal('${u.nama}')">✏️</button>
+                <button class="btn btn-ghost btn-sm" title="Set semula kata laluan" onclick="resetKataLaluan('${u.nama}')">🔑</button>
+                <button class="btn btn-ghost btn-sm" style="color:#DC2626" title="Padam" onclick="padamPengguna('${u.nama}')">🗑️</button>
               </div>
             </td>
           </tr>`;
